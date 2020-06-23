@@ -30,3 +30,13 @@
 *.exe
 *.out
 *.app
+
+*location.hh
+*position.hh
+*stack.hh
+*del_lexer.yy.cc
+*del_parser.output
+*del_parser.tab.cc
+*del_parser.tab.hh
+
+*build/
