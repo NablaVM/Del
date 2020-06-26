@@ -18,7 +18,13 @@ namespace DEL
 
         // From Elements/Visitor
         virtual void accept(Function & stmt) override;
+        virtual void accept(Return   & stmt) override;
         virtual void accept(Assignment & stmt) override;
+        virtual void accept(Reassignment & stmt) override;
+        virtual void accept(ObjectAssignment & stmt) override;
+        virtual void accept(ObjectReassignment & stmt) override;
+        virtual void accept(ObjectMember & stmt) override;
+        virtual void accept(Object & stmt) override;
 
     private:
 

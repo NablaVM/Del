@@ -37,12 +37,25 @@ using token = DEL::DEL_Parser::token;
             yylval = lval;
 %}
 
+"//".*\n   { /* Single line comment  - This requires a newline, 
+                so if last line if file is // syntax error for now 
+             */ 
+            }
+
 "var"      { return token::VAR;    }
+"let"      { return token::LET;    }
 "int"      { return token::INT;    }
 "double"   { return token::DOUBLE; }
 "string"   { return token::STRING; }
 "nil"      { return token::NIL;    }
-"object"   { return token::OBJECT; }
+"->"       { return token::ARROW;  }
+"return"   { return token::RETURN; }
+"pub"      { return token::PUB;    }
+"priv"     { return token::PRIV;   }
+"object"   { 
+               yylval->build< int >( yylineno );
+               return ( token::OBJECT );    
+           }
 
 "<="       { return token::LTE;    }
 "<"        { return token::LT;     }
@@ -90,6 +103,11 @@ using token = DEL::DEL_Parser::token;
                yylval->build< int >( yylineno );
                return ( token::SEMI );
            }
+
+\"([^\\\"]|\\.)*\" {
+                       yylval->build< std::string >( yytext );
+                       return ( token::STRING_LITERAL );
+                   }
 
 [ \t]+      { /* Eat WS */  }
 
