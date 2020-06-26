@@ -50,7 +50,7 @@ namespace DEL
         Assignment(Ast * ast, EncodedDataType* type_info, int line_number) : 
             Element(line_number), ast(ast), type_info(type_info) {}
 
-        ~Assignment(){ delete ast; }
+        ~Assignment(){ delete ast; delete type_info; }
 
         virtual void visit(Visitor &visit) override;
 

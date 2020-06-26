@@ -53,7 +53,7 @@ namespace DEL
     void Analyzer::accept(Assignment & stmt) 
     {
         std::cout << "Analyzer::accept(Assignment & stmt)" << std::endl;
-
-        std::cout << "\t Var : " << stmt.ast->left->node.data << std::endl;
+        std::cout << "\t Var  : " << stmt.ast->left->node.data << std::endl;
+        std::cout << "\t Type : " << stmt.type_info->raw << std::endl;
     }
 }
