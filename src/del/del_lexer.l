@@ -40,6 +40,9 @@ using token = DEL::DEL_Parser::token;
 "var"      { return token::VAR;    }
 "int"      { return token::INT;    }
 "double"   { return token::DOUBLE; }
+"string"   { return token::STRING; }
+"nil"      { return token::NIL;    }
+"object"   { return token::OBJECT; }
 
 "<="       { return token::LTE;    }
 "<"        { return token::LT;     }

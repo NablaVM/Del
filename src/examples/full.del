@@ -1,0 +1,55 @@
+
+func main() -> nil {
+
+    return;
+}
+
+func my_func(int: x, int: y) -> int {
+
+    return x ^ y;
+}
+
+struct MyStruct {
+    int: x;
+    int: y;
+}
+
+struct OtherStruct {
+    MyStruct: ms;
+    string: label;
+
+    func setup() -> OtherStruct {
+
+        var : OtherStruct os = {
+
+            ms: MyStruct{ x: 0, y: 0},
+            label: "Default"
+        };
+
+        return os;
+    }
+}
+
+func example() -> nil {
+
+    // Mutable
+    var : int local_x = 43;
+    
+    // Immutable
+    let : double y = 3.14;
+
+    var : MyStruct ms = { 
+        x: local_x
+        y: 44
+    };
+
+    return;
+}
+
+def MyStruct::setup(int: x, int: y) -> MyStruct {
+
+    return MyStruct {
+        x: x 
+        y: y
+    };
+}

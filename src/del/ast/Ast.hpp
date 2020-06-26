@@ -44,6 +44,8 @@ namespace DEL
         Ast(NodeType node_type, Ast * left, Ast * right) : 
             node(node_type, DataType::NONE, ""), left(left), right(right){} 
 
+        ~Ast(){ delete left; delete right; }
+
         Node node;
 
         Ast * left;

@@ -22,8 +22,13 @@ set(DEL_COMPILER_HEADERS
     ${DEL_COMPILER_DIR}/del_scanner.hpp
 
     ${DEL_COMPILER_DIR}/Analysis/Analyzer.hpp
+    
     ${DEL_COMPILER_DIR}/Ast/Ast.hpp
     ${DEL_COMPILER_DIR}/Ast/Elements.hpp
+
+    ${DEL_COMPILER_DIR}/Managers/DefinedTypes.hpp
+    ${DEL_COMPILER_DIR}/Managers/SymbolTable.hpp
+
     ${DEL_COMPILER_DIR}/Types/Variables.hpp
 
     ${DEL_COMPILER_DIR}/SystemSettings.hpp

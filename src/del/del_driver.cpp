@@ -3,7 +3,6 @@
 #include <cassert>
 #include <iostream>
 #include <string>
-//#include <libnabla/assembler.hpp>
 #include "del_driver.hpp"
 
 namespace DEL
@@ -123,5 +122,11 @@ namespace DEL
    void DEL_Driver::build(Element *element)
    {
       std::cout << "DEL_Driver::build()" << std::endl;
+
+      // Visit analyzer
+      element->visit(analyzer);
+
+      // Delete element
+      delete element;
    }
 }

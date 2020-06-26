@@ -2,6 +2,7 @@
 #define DEL_AST_ELEMENTS_HPP
 
 #include "Ast.hpp"
+#include "Types/Variables.hpp"
 
 #include <vector>
 
@@ -46,11 +47,15 @@ namespace DEL
     class Assignment : public Element
     {
     public:
-        Assignment(Ast * ast, int line_number) : Element(line_number), ast(ast){}
+        Assignment(Ast * ast, EncodedDataType* type_info, int line_number) : 
+            Element(line_number), ast(ast), type_info(type_info) {}
+
+        ~Assignment(){ delete ast; }
 
         virtual void visit(Visitor &visit) override;
 
         Ast * ast;
+        EncodedDataType * type_info;
     };
 
 

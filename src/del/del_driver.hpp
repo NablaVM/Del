@@ -9,6 +9,8 @@
 #include "Ast/Ast.hpp"
 #include "Ast/Elements.hpp"
 
+#include "Analysis/Analyzer.hpp"
+
 #include "del_scanner.hpp"
 #include "del_parser.tab.hh"
 
@@ -43,6 +45,8 @@ namespace DEL
       friend DEL_Parser;
 
    private:
+
+      Analyzer analyzer;
 
       //! \brief Parse from an istream - Not currently used
       void parse( std::istream &iss );

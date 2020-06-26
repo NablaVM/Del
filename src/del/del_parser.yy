@@ -18,6 +18,7 @@
       class Ast;
       class Element;
       class Function;
+      class EncodedDataType;
    }
 
 # ifndef YY_NULLPTR
@@ -62,7 +63,7 @@
 %type<DEL::Ast*> factor;
 %type<DEL::Ast*> primary;
 
-%type<int> variable_type;
+%type<EncodedDataType*> variable_type;
 
 %type<std::vector<DEL::Element*>> multiple_statements;
 %type<std::vector<DEL::Element*>> block;
@@ -73,7 +74,7 @@
 
 %token DOT COMMA COL 
 
-%token INT DOUBLE 
+%token INT DOUBLE STRING NIL OBJECT
 
 %token LSH RSH BW_OR BW_AND BW_XOR AND OR NEGATE  MOD
 %token LTE GTE GT LT EQ NE BW_NOT DIV ADD SUB MUL POW
@@ -152,8 +153,11 @@ primary
     ;
 
 variable_type
-   : INT    { $$ = static_cast<int>(DEL::DataType::INT);    }
-   | DOUBLE { $$ = static_cast<int>(DEL::DataType::DOUBLE); }
+   : INT    { $$ = new EncodedDataType(DEL::DataType::INT,    "int"   ); }
+   | DOUBLE { $$ = new EncodedDataType(DEL::DataType::DOUBLE, "double"); }
+   | STRING { $$ = new EncodedDataType(DEL::DataType::STRING, "string"); }
+   | NIL    { $$ = new EncodedDataType(DEL::DataType::NIL,    "nil"   ); }
+   | OBJECT LT identifiers GT { $$ = new EncodedDataType(DEL::DataType::USER_DEFINED, $3); }
    ;
 
 assignment
@@ -163,9 +167,10 @@ assignment
          // and the rhs is the expression
          $$ = new DEL::Assignment(
                new DEL::Ast(DEL::Ast::NodeType::ROOT, DEL::DataType::NONE, "=", 
-                  new DEL::Ast(DEL::Ast::NodeType::IDENTIFIER, DEL::DataType::ID_STRING, $2, nullptr, nullptr),
-                  $6),
-               $7);
+                  new DEL::Ast(DEL::Ast::NodeType::IDENTIFIER, DEL::DataType::ID_STRING, $2, nullptr, nullptr), /* Var name */
+                  $6),  /* Expression AST    */
+               $4,      /* Encoded Data type */
+            $7);        /* Line Number       */
       }
    ;
 

@@ -5,13 +5,37 @@
 
 namespace DEL
 {
+    enum class ArithmeticOp
+    {
+        LSH, RSH, BW_OR, BW_AND, BW_XOR, AND, OR, NEGATE,      MOD,
+        LTE, GTE, GT, LT, EQ, NE, BW_NOT, DIV, ADD, SUB, MUL,  POW 
+    };
+
     enum class DataType
     {
-        NONE,
-        INT,
-        DOUBLE,
-        ID_STRING,
-        USER_DEFINED
+        NIL,         // Value representing nothing
+        NONE,        // No value
+        INT,         // Integer
+        DOUBLE,      // Double
+        STRING,      // String
+        ID_STRING,   // Data type is string representing identifier
+        USER_DEFINED // User defined data type
+    };
+
+    class EncodedDataType
+    {
+    public:
+        EncodedDataType(DataType type, std::string raw) : 
+            dataType(type), raw(raw){}
+            
+        DataType dataType;
+        std::string raw;
+    };
+
+    struct VariableNameTypePair
+    {
+        std::string name;
+        DataType dataType;
     };
 
     static std::string DataType_to_string(DataType type)
@@ -19,6 +43,7 @@ namespace DEL
         switch(type)
         {
             case DataType::NONE:          return "NONE";
+            case DataType::NIL:           return "NIL";
             case DataType::INT:           return "INT";
             case DataType::DOUBLE:        return "DOUBLE";
             case DataType::ID_STRING:     return "ID_STRING";
