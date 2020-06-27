@@ -20,6 +20,7 @@
       class Function;
       class EncodedDataType;
       class Parameter;
+      class Call;
    }
 
 # ifndef YY_NULLPTR
@@ -59,6 +60,7 @@
 %type<DEL::Element*> assignment;
 %type<DEL::Element*> return_stmt;
 %type<DEL::Element*> function_stmt;
+%type<DEL::Element*> direct_function_call;
 
 %type<DEL::Element*> object_assignment;
 %type<DEL::Element*> object_definition;
@@ -79,6 +81,7 @@
 %type<DEL::Ast*> term;
 %type<DEL::Ast*> factor;
 %type<DEL::Ast*> primary;
+%type<DEL::Ast*> expr_function_call;
 
 %type<EncodedDataType*> assignable_type;
 %type<EncodedDataType*> returnable_type;
@@ -97,6 +100,9 @@
 %type<Parameter*> single_func_param;
 %type<std::vector<DEL::Parameter*>> function_params;
 
+%type<Parameter*> single_call_param;
+%type<std::vector<DEL::Parameter*>> call_params;
+
 %type<std::string> identifiers;
 
 %token LEFT_PAREN LEFT_BRACKET ASSIGN VAR LET
@@ -114,7 +120,7 @@
 
 %token <std::string> INT_LITERAL
 %token <std::string> HEX_LITERAL
-%token <std::string> REAL_LITERAL
+%token <std::string> DOUB_LITERAL
 %token <std::string> CHAR_LITERAL
 %token <std::string> STRING_LITERAL
 
@@ -183,6 +189,7 @@ term
 
 factor
    : primary                     { $$ = $1; }
+   | expr_function_call          { $$ = $1; }
    | LEFT_PAREN expression RIGHT_PAREN    { $$ = $2; }
    | BW_NOT factor               { $$ = new DEL::Ast(DEL::Ast::NodeType::BW_NOT, $2, nullptr);}
    | NEGATE factor               { $$ = new DEL::Ast(DEL::Ast::NodeType::NEGATE, $2, nullptr);}
@@ -190,10 +197,10 @@ factor
 
 primary
     : INT_LITERAL                { $$ = new DEL::Ast(DEL::Ast::NodeType::VALUE,      DEL::DataType::INT,       $1, nullptr, nullptr); }
-    | REAL_LITERAL               { $$ = new DEL::Ast(DEL::Ast::NodeType::VALUE,      DEL::DataType::DOUBLE,    $1, nullptr, nullptr); }
+    | DOUB_LITERAL               { $$ = new DEL::Ast(DEL::Ast::NodeType::VALUE,      DEL::DataType::DOUBLE,    $1, nullptr, nullptr); }
     | identifiers                { $$ = new DEL::Ast(DEL::Ast::NodeType::IDENTIFIER, DEL::DataType::ID_STRING, $1, nullptr, nullptr); }
     ;
-
+    
 assignable_type
    : INT    { $$ = new EncodedDataType(DEL::DataType::INT,    "int"   ); }
    | DOUBLE { $$ = new EncodedDataType(DEL::DataType::DOUBLE, "double"); }
@@ -253,10 +260,11 @@ return_stmt
    ;
 
 stmt
-   : assignment  { $$ = $1; }
-   | if_stmt     { $$ = $1; }
-   | return_stmt { $$ = $1; }
-   | loop_stmt   { $$ = $1; }
+   : assignment           { $$ = $1; }
+   | if_stmt              { $$ = $1; }
+   | return_stmt          { $$ = $1; }
+   | loop_stmt            { $$ = $1; }
+   | direct_function_call { $$ = $1; }
    ;
 
 multiple_statements
@@ -306,6 +314,35 @@ function_stmt
       { 
          $$ = new DEL::Function($2, $4, $8, $7, $1); 
       }
+   ;
+
+// 
+// --------------------------- Call Statements --------------------------
+// 
+
+single_call_param
+   : identifiers     { $$ = new Parameter(DEL::DataType::ID_STRING, $1, "unknown"     , false); }
+   | REF identifiers { $$ = new Parameter(DEL::DataType::ID_STRING, $2, "unknown ref" , true);  }
+   | INT_LITERAL     { $$ = new Parameter(DEL::DataType::INT,       $1, "int literal" , false); }
+   | DOUB_LITERAL    { $$ = new Parameter(DEL::DataType::DOUBLE,    $1, "doub literal", false); }
+   | STRING_LITERAL  { $$ = new Parameter(DEL::DataType::STRING,    $1, "str literal" , false); }
+   ;
+
+call_params
+   : single_call_param { $$ = std::vector<DEL::Parameter*>(); $$.push_back($1); }
+   | call_params COMMA single_call_param { $1.push_back($3); $$ = $1; }
+   ;
+
+// Returns call as an AST 
+expr_function_call
+   : identifiers LEFT_PAREN RIGHT_PAREN             { $$ = new DEL::Call($1, std::vector<DEL::Parameter*>(), $3 ); }
+   | identifiers LEFT_PAREN call_params RIGHT_PAREN { $$ = new DEL::Call($1, $3, $4); }
+   ;
+
+// Returns call as an Element
+direct_function_call
+   : identifiers LEFT_PAREN RIGHT_PAREN SEMI             { $$ = new DEL::Call($1, std::vector<DEL::Parameter*>(), $3 ); }
+   | identifiers LEFT_PAREN call_params RIGHT_PAREN SEMI { $$ = new DEL::Call($1, $3, $4); }
    ;
 
 // 

@@ -19,7 +19,8 @@ namespace DEL
             GT , LT , EQ , NE , 
             MUL, DIV, POW, MOD,
             LSH, RSH, BW_XOR, BW_OR,  
-            BW_AND, OR, AND, BW_NOT, NEGATE
+            BW_AND, OR, AND, BW_NOT, NEGATE,
+            CALL
         };
 
         //! \brief Ast Node

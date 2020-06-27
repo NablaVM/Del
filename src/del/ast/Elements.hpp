@@ -46,6 +46,23 @@ namespace DEL
         EncodedDataType * return_type;
     };
 
+    //! \param Call element
+    //  Calls need to inherit AST as well as they can be placed into an expression
+    //  or used as an element.
+    class Call : public Element, public Ast
+    {
+    public:
+        Call(std::string function_name, std::vector<Parameter*> params, int line_number) : 
+            Element(line_number), 
+            Ast(NodeType::CALL, nullptr, nullptr),
+            function_name(function_name), params(params){}
+
+        virtual void visit(Visitor &visit) override;
+
+        std::string function_name;
+        std::vector<Parameter*> params;
+    };
+
     //! \brief Return statement
     class Return : public Element
     {
@@ -238,11 +255,13 @@ namespace DEL
         std::string name;
     };
 
+
     //! \brief A visitor that takes in elements on accept
     class Visitor
     {
     public:
         virtual void accept(Function   &stmt) = 0;
+        virtual void accept(Call       &stmt) = 0;
         virtual void accept(Return     &stmt) = 0;
         virtual void accept(Assignment &stmt) = 0;
         virtual void accept(Reassignment &stmt) = 0;

@@ -71,6 +71,34 @@ namespace DEL
     //
     // -----------------------------------------------------
 
+    void Analyzer::accept(Call & stmt) 
+    {
+        std::cout << "Analyzer::accept(Call & stmt)" << std::endl;
+        std::cout << "\t Func   : " << stmt.function_name << std::endl;
+        std::cout << "\t Params : " << stmt.params.size() << std::endl;
+               
+        // This way we dont show the begin/ end bars if there are no params
+        if(stmt.params.size() > 0)
+        {
+            std::cout << "-------------------- PARAMS --------------------" << std::endl;
+
+            for(auto & p : stmt.params)
+            {
+                std::cout << "PARAM >>>" << std::endl;
+                std::cout << "\t Type : " << DataType_to_string(p->dataType) << std::endl;
+                std::cout << "\t Name : " << p->var << std::endl;
+                std::cout << "\t Obj  : " << p->obj_type << std::endl; 
+                std::cout << "\t Ref? : " << p->is_ref << std::endl;
+            }
+
+            std::cout << "------------------ END PARAMS ------------------" << std::endl;
+        }
+    }
+
+    // -----------------------------------------------------
+    //
+    // -----------------------------------------------------
+
     void Analyzer::accept(Return & stmt) 
     {
         bool has_return = (stmt.ast != nullptr);

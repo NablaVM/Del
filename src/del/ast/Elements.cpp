@@ -7,6 +7,11 @@ namespace DEL
         visitor.accept(*this);
     }
 
+    void Call::visit(Visitor &visitor)
+    {
+        visitor.accept(*this);
+    }
+
     void Return::visit(Visitor &visitor)
     {
         visitor.accept(*this);

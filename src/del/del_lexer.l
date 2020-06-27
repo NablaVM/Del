@@ -140,7 +140,7 @@ using token = DEL::DEL_Parser::token;
 
 [0-9]+\.[0-9]+ {
                yylval->build< std::string >( yytext );
-               return ( token::REAL_LITERAL );
+               return ( token::DOUB_LITERAL );
             }
 
 [0-9]+      {

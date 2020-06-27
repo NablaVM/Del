@@ -22,6 +22,7 @@ namespace DEL
         USER_DEFINED // User defined data type
     };
 
+    //! \brief A data type with a string for representation
     class EncodedDataType
     {
     public:
@@ -32,13 +33,7 @@ namespace DEL
         std::string raw;
     };
 
-    struct VariableNameTypePair
-    {
-        std::string name;
-        DataType dataType;
-    };
-
-
+    //! \brief A parameter to be passed
     class Parameter
     {
     public:
@@ -50,7 +45,6 @@ namespace DEL
         std::string obj_type;
         bool is_ref;
     };
-
 
     static std::string DataType_to_string(DataType type)
     {
