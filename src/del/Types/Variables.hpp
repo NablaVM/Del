@@ -38,6 +38,20 @@ namespace DEL
         DataType dataType;
     };
 
+
+    class Parameter
+    {
+    public:
+        Parameter(DataType type, std::string var, std::string obj_type, bool is_ref) : 
+            dataType(type), var(var), obj_type(obj_type), is_ref(is_ref) {}
+            
+        DataType dataType;
+        std::string var;
+        std::string obj_type;
+        bool is_ref;
+    };
+
+
     static std::string DataType_to_string(DataType type)
     {
         switch(type)
@@ -47,6 +61,7 @@ namespace DEL
             case DataType::INT:           return "INT";
             case DataType::DOUBLE:        return "DOUBLE";
             case DataType::ID_STRING:     return "ID_STRING";
+            case DataType::STRING:        return "STRING";
             case DataType::USER_DEFINED:  return "USER_DEFINED";
             default:                      return "ERROR";
         }

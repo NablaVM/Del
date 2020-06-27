@@ -33,14 +33,14 @@ namespace DEL
     class Function : public Element
     {
     public:
-        Function(std::string name, std::vector<std::string> params, ElementList elements, EncodedDataType * return_type, int line_number) : 
+        Function(std::string name, std::vector<Parameter*> params, ElementList elements, EncodedDataType * return_type, int line_number) : 
             Element(line_number), params(params), name(name), elements(elements), return_type(return_type) {}
 
-        ~Function() { delete return_type; }
+        ~Function() { if(return_type){ delete return_type; } }
 
         virtual void visit(Visitor &visit) override;
 
-        std::vector<std::string> params;
+        std::vector<Parameter*> params;
         std::string name;
         ElementList elements;
         EncodedDataType * return_type;
@@ -53,7 +53,7 @@ namespace DEL
         Return(Ast * ast_expression, int line_number) : 
             Element(line_number), ast(ast_expression) {}
 
-        ~Return(){ delete ast; }
+        ~Return(){ if(ast){ delete ast; } }
 
         virtual void visit(Visitor &visit) override;
 
@@ -67,7 +67,7 @@ namespace DEL
         Assignment(bool immutable, Ast * ast, EncodedDataType* type_info, int line_number) : 
             Element(line_number), is_immutable(immutable), ast(ast), type_info(type_info) {}
 
-        ~Assignment(){ delete ast; delete type_info; }
+        ~Assignment(){ if(ast) { delete ast; } if(type_info){ delete type_info; } }
 
         virtual void visit(Visitor &visit) override;
 
@@ -87,12 +87,39 @@ namespace DEL
         Ast * ast;
     };
 
+    //! \brief If Statement
+    class If : public Element
+    {
+    public:
+        enum class Type
+        {
+            IF,
+            ELIF,
+            ELSE
+        };
+
+        If(If::Type type, Ast * ast, ElementList elements, Element * trail, int line_number) : 
+            Element(line_number), type(type), elements(elements), trail(trail)
+        {}
+
+        ~If(){ if(trail) { delete trail; } }
+
+        virtual void visit(Visitor &visit) override;
+
+        If::Type type;          // Type of if
+        Ast * ast;              // Expression
+        ElementList elements;   // Statements inside the if
+        Element * trail;        // 
+    };
+
     //! \brief Assignment of an object
     class ObjectAssignment : public Element 
     {
     public:
         ObjectAssignment(bool immutable, std::string name, EncodedDataType * type, ElementList elements, int line_number) : 
             Element(line_number), is_immutable(immutable), name(name), type_info(type), elements(elements) {}
+
+        ~ObjectAssignment(){ if(type_info){ delete type_info; } }
 
         virtual void visit(Visitor &visit) override;
 
@@ -121,7 +148,7 @@ namespace DEL
         ObjectMember(EncodedDataType * type, std::string name, int line_numner) :
             Element(line_numner), type_info(type), name(name){}
 
-        ~ObjectMember(){ delete type_info; }
+        ~ObjectMember(){ if(type_info) { delete type_info; } }
 
         virtual void visit(Visitor &visit) override;
 
@@ -143,6 +170,74 @@ namespace DEL
         ElementList priv;
     };
 
+    //! \brief While
+    class WhileLoop  : public Element
+    {
+    public:
+        WhileLoop(Ast * ast, ElementList elements, int line_number) : 
+            Element(line_number), ast(ast), elements(elements) {}
+
+        ~WhileLoop(){ if(ast){ delete ast; } }
+
+        virtual void visit(Visitor &visit) override;
+
+        Ast * ast;
+        ElementList elements;
+    };
+
+    //! \brief ForLoop
+    class ForLoop  : public Element
+    {
+    public:
+        ForLoop(Element * loop_var, Ast * condition, Element* step, ElementList elements, int line_number) : 
+            Element(line_number), loop_var(loop_var), condition(condition), step(step), elements(elements) {}
+
+        ~ForLoop(){ if(loop_var){ delete loop_var; }
+                    if(condition){delete condition;}
+                    if(step){ delete step; } }
+
+        virtual void visit(Visitor &visit) override;
+
+        Element * loop_var;
+        Ast * condition;
+        Element * step;
+        ElementList elements;
+    };
+
+    //! \brief Named Loop
+    class NamedLoop : public Element
+    {
+    public:
+        NamedLoop(std::string name, ElementList elements, int line_number) : 
+            Element(line_number), name(name), elements(elements) {}
+
+        virtual void visit(Visitor &visit) override;
+
+        std::string name;
+        ElementList elements;
+    };
+
+    //! \brief Continue Statement
+    class Continue : public Element
+    {
+    public:
+        Continue(int line_number) : Element(line_number){}
+
+        virtual void visit(Visitor &visit) override;
+    };
+
+    //! \brief Break Statement
+    class Break : public Element
+    {
+    public:
+        Break(std::string name, int line_number) : 
+            Element(line_number), name(name){}
+
+        virtual void visit(Visitor &visit) override;
+
+        std::string name;
+    };
+
     //! \brief A visitor that takes in elements on accept
     class Visitor
     {
@@ -155,6 +250,12 @@ namespace DEL
         virtual void accept(ObjectReassignment &stmt) = 0;
         virtual void accept(ObjectMember &stmt) = 0;
         virtual void accept(Object     &stmt) = 0;
+        virtual void accept(If         &stmt) = 0;
+        virtual void accept(WhileLoop  &stmt) = 0;
+        virtual void accept(ForLoop    &stmt) = 0;
+        virtual void accept(NamedLoop  &stmt) = 0;
+        virtual void accept(Continue   &stmt) = 0;
+        virtual void accept(Break      &stmt) = 0;
     };
 }
 

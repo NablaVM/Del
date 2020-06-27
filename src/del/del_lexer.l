@@ -56,6 +56,20 @@ using token = DEL::DEL_Parser::token;
                yylval->build< int >( yylineno );
                return ( token::OBJECT );    
            }
+"if"       { return token::IF;     }
+"elif"     { return token::ELIF;   }
+
+"while"    { return token::WHILE;  }
+"cont"     { return token::CONT;   }
+
+"for"      { return token::FOR;    }
+
+"loop"     { return token::LOOP;   }
+"'"        { 
+               yylval->build< int >( yylineno );
+               return ( token::KEY );    
+           }
+"break"    { return token::BREAK;  }
 
 "<="       { return token::LTE;    }
 "<"        { return token::LT;     }
@@ -103,6 +117,12 @@ using token = DEL::DEL_Parser::token;
                yylval->build< int >( yylineno );
                return ( token::SEMI );
            }
+"else"     {
+               yylval->build< int >( yylineno );
+               return ( token::ELSE );
+           }
+
+"&"        { return token::REF; }
 
 \"([^\\\"]|\\.)*\" {
                        yylval->build< std::string >( yytext );

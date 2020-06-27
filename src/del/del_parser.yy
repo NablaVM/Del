@@ -19,6 +19,7 @@
       class Element;
       class Function;
       class EncodedDataType;
+      class Parameter;
    }
 
 # ifndef YY_NULLPTR
@@ -56,15 +57,21 @@
 
 %type<DEL::Element*> stmt;
 %type<DEL::Element*> assignment;
-%type<DEL::Element*> object_assignment;
 %type<DEL::Element*> return_stmt;
 %type<DEL::Element*> function_stmt;
 
+%type<DEL::Element*> object_assignment;
 %type<DEL::Element*> object_definition;
-
 %type<DEL::Element*> object_stmt;
 %type<DEL::Element*> member_definition;
 
+%type<DEL::Element*> if_stmt;
+%type<DEL::Element*> elif_stmt;
+%type<DEL::Element*> else_stmt;
+
+%type<DEL::Element*> loops_only_stmts;
+%type<DEL::Element*> named_loops_only_stmts;
+%type<DEL::Element*> loop_stmt;
 
 %type<DEL::Ast*> expression;
 %type<DEL::Ast*> assignment_allowed_expression;
@@ -76,24 +83,34 @@
 %type<EncodedDataType*> assignable_type;
 %type<EncodedDataType*> returnable_type;
 
-
 %type<std::vector<DEL::Element*>> multiple_object_stmts;
 %type<std::vector<DEL::Element*>> multiple_statements;
 %type<std::vector<DEL::Element*>> multiple_assignments;
+%type<std::vector<DEL::Element*>> multiple_loop_statements;
+%type<std::vector<DEL::Element*>> multiple_named_loop_statements;
 %type<std::vector<DEL::Element*>> object_instantiation;
 %type<std::vector<DEL::Element*>> block;
+%type<std::vector<DEL::Element*>> loop_block;
+%type<std::vector<DEL::Element*>> named_loop_block;
 %type<std::vector<DEL::Element*>> object_block;
+
+%type<Parameter*> single_func_param;
+%type<std::vector<DEL::Parameter*>> function_params;
 
 %type<std::string> identifiers;
 
 %token LEFT_PAREN LEFT_BRACKET ASSIGN VAR LET
 
-%token DOT COMMA COL 
+%token DOT COMMA COL ARROW RETURN PUB PRIV REF
 
-%token INT DOUBLE STRING NIL ARROW RETURN PUB PRIV
+%token INT DOUBLE STRING NIL
 
 %token LSH RSH BW_OR BW_AND BW_XOR AND OR NEGATE  MOD
 %token LTE GTE GT LT EQ NE BW_NOT DIV ADD SUB MUL POW
+
+%token IF ELIF
+
+%token WHILE CONT FOR LOOP BREAK;
 
 %token <std::string> INT_LITERAL
 %token <std::string> HEX_LITERAL
@@ -106,7 +123,9 @@
 %token <int>         RIGHT_PAREN    // These tokens encode line numbers
 %token <int>         SEMI           // These tokens encode line numbers
 %token <int>         FUNC           // These tokens encode line numbers
-%token <int>         OBJECT        // These tokens encode line numbers
+%token <int>         OBJECT         // These tokens encode line numbers
+%token <int>         ELSE           // These tokens encode line numbers
+%token <int>         KEY            // These tokens encode line numbers
 
 %token               END    0     "end of file"
 %locations
@@ -235,7 +254,9 @@ return_stmt
 
 stmt
    : assignment  { $$ = $1; }
+   | if_stmt     { $$ = $1; }
    | return_stmt { $$ = $1; }
+   | loop_stmt   { $$ = $1; }
    ;
 
 multiple_statements
@@ -253,8 +274,119 @@ block
    | LEFT_BRACKET RIGHT_BRACKET                     { $$ = std::vector<DEL::Element*>(); }
    ;
 
+// 
+// ------------------------- Function Statements ------------------------
+// 
+
+single_func_param
+   : INT    COL identifiers { $$ = new Parameter(DEL::DataType::INT,    $3, "int"   , false); }
+   | DOUBLE COL identifiers { $$ = new Parameter(DEL::DataType::DOUBLE, $3, "double", false); }
+   | STRING COL identifiers { $$ = new Parameter(DEL::DataType::STRING, $3, "string", false); }
+   | OBJECT LT identifiers GT COL identifiers
+      {
+         $$ = new Parameter(DEL::DataType::USER_DEFINED, $6, $3, false);
+      }
+   | REF INT    COL identifiers { $$ = new Parameter(DEL::DataType::INT,    $4, "int"   , true); }
+   | REF DOUBLE COL identifiers { $$ = new Parameter(DEL::DataType::DOUBLE, $4, "double", true); }
+   | REF STRING COL identifiers { $$ = new Parameter(DEL::DataType::STRING, $4, "string", true); }
+   | REF OBJECT LT identifiers GT COL identifiers
+      {
+         $$ = new Parameter(DEL::DataType::USER_DEFINED, $7, $4, true);
+      }
+   ;
+
+function_params
+   : single_func_param { $$ = std::vector<DEL::Parameter*>(); $$.push_back($1); }
+   | function_params COMMA single_func_param { $1.push_back($3); $$ = $1; }
+   ;
+
 function_stmt 
-   : FUNC identifiers LEFT_PAREN RIGHT_PAREN ARROW returnable_type block { $$ = new DEL::Function($2, std::vector<std::string>(), $7, $6, $1); }
+   : FUNC identifiers LEFT_PAREN RIGHT_PAREN ARROW returnable_type block { $$ = new DEL::Function($2, std::vector<DEL::Parameter*>(), $7, $6, $1); }
+   | FUNC identifiers LEFT_PAREN function_params RIGHT_PAREN ARROW returnable_type block 
+      { 
+         $$ = new DEL::Function($2, $4, $8, $7, $1); 
+      }
+   ;
+
+// 
+// ----------------------- Conditional Statements -----------------------
+// 
+
+if_stmt
+   : IF LEFT_PAREN expression RIGHT_PAREN block elif_stmt { $$ = new DEL::If(If::Type::IF, $3, $5, $6, $4); }
+   | IF LEFT_PAREN expression RIGHT_PAREN block else_stmt { $$ = new DEL::If(If::Type::IF, $3, $5, $6, $4); }
+   | IF LEFT_PAREN expression RIGHT_PAREN block           { $$ = new DEL::If(If::Type::IF, $3, $5, nullptr, $4); }
+   ;
+
+elif_stmt
+   : ELIF LEFT_PAREN expression RIGHT_PAREN block elif_stmt  { $$ = new DEL::If(If::Type::ELIF, $3, $5, $6, $4); }
+   | ELIF LEFT_PAREN expression RIGHT_PAREN block else_stmt  { $$ = new DEL::If(If::Type::ELIF, $3, $5, $6, $4); }
+   | ELIF LEFT_PAREN expression RIGHT_PAREN block            { $$ = new DEL::If(If::Type::ELIF, $3, $5, nullptr, $4); }
+   ;
+
+else_stmt
+   : ELSE block   { $$ = new DEL::If(If::Type::ELSE, 
+                                     new DEL::Ast(DEL::Ast::NodeType::VALUE, DEL::DataType::INT, "1", nullptr, nullptr),
+                                     $2,
+                                     nullptr,
+                                     $1);
+
+                     // We create an "always true" statement so we can leverage elseif code, while still
+                     // treating this as an "else"
+                  }
+   ;
+
+// 
+// --------------------------- Loop Statements --------------------------
+// 
+
+loops_only_stmts
+   : CONT SEMI { $$ = new DEL::Continue($2); }
+   ;
+
+named_loops_only_stmts
+   : BREAK identifiers SEMI { $$ = new DEL::Break($2, $3); }
+   ;
+
+multiple_loop_statements
+   : stmt                                 { $$ = std::vector<DEL::Element*>(); $$.push_back($1); }
+   | loops_only_stmts                     { $$ = std::vector<DEL::Element*>(); $$.push_back($1); }
+   | multiple_loop_statements stmt             { $1.push_back($2); $$ = $1; }
+   | multiple_loop_statements loops_only_stmts { $1.push_back($2); $$ = $1; }
+   ;
+
+multiple_named_loop_statements
+   : stmt                                 { $$ = std::vector<DEL::Element*>(); $$.push_back($1); }
+   | named_loops_only_stmts               { $$ = std::vector<DEL::Element*>(); $$.push_back($1); }
+   | loops_only_stmts                     { $$ = std::vector<DEL::Element*>(); $$.push_back($1); }
+   | multiple_named_loop_statements stmt             { $1.push_back($2); $$ = $1; }
+   | multiple_named_loop_statements loops_only_stmts { $1.push_back($2); $$ = $1; }
+   | multiple_named_loop_statements named_loops_only_stmts { $1.push_back($2); $$ = $1; }
+   ;
+
+loop_block 
+   : LEFT_BRACKET multiple_loop_statements RIGHT_BRACKET { $$ = $2; }
+   | LEFT_BRACKET RIGHT_BRACKET                     { $$ = std::vector<DEL::Element*>(); }
+   ;
+
+named_loop_block 
+   : LEFT_BRACKET multiple_named_loop_statements RIGHT_BRACKET { $$ = $2; }
+   | LEFT_BRACKET RIGHT_BRACKET                     { $$ = std::vector<DEL::Element*>(); }
+   ;
+
+loop_stmt
+   : WHILE LEFT_PAREN expression RIGHT_PAREN loop_block 
+      { 
+         $$ = new DEL::WhileLoop($3, $5, $4); 
+      }
+   | FOR LEFT_PAREN assignment expression SEMI assignment RIGHT_PAREN loop_block 
+      {
+         $$ = new DEL::ForLoop($3, $4, $6, $8, $7);
+      }
+   | LOOP KEY identifiers named_loop_block 
+      {
+         $$ = new DEL::NamedLoop($3, $4, $2);
+      }
    ;
 
 // 

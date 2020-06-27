@@ -25,6 +25,12 @@ namespace DEL
         virtual void accept(ObjectReassignment & stmt) override;
         virtual void accept(ObjectMember & stmt) override;
         virtual void accept(Object & stmt) override;
+        virtual void accept(If & stmt) override;
+        virtual void accept(WhileLoop  &stmt) override;
+        virtual void accept(ForLoop    &stmt) override;
+        virtual void accept(NamedLoop  &stmt) override;
+        virtual void accept(Continue   &stmt) override;
+        virtual void accept(Break      &stmt) override;
 
     private:
 
