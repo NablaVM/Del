@@ -75,6 +75,8 @@
 %type<DEL::Element*> named_loops_only_stmts;
 %type<DEL::Element*> loop_stmt;
 
+%type<DEL::Element*> dyn_stmt;
+
 %type<DEL::Ast*> expression;
 %type<DEL::Ast*> assignment_allowed_expression;
 %type<DEL::Ast*> string_expr;
@@ -118,6 +120,10 @@
 
 %token WHILE CONT FOR LOOP BREAK;
 
+%token TYPE VALUE INDEX DEST 
+%token DYN_CREATE DYN_EXPAND DYN_INSERT DYN_APPEND DYN_CLEAR 
+%token DYN_DELETE DYN_GET DYN_SIZE DYN_FRONT DYN_BACK
+
 %token <std::string> INT_LITERAL
 %token <std::string> HEX_LITERAL
 %token <std::string> DOUB_LITERAL
@@ -132,6 +138,7 @@
 %token <int>         OBJECT         // These tokens encode line numbers
 %token <int>         ELSE           // These tokens encode line numbers
 %token <int>         KEY            // These tokens encode line numbers
+%token <int>         GLOBAL         // These tokens encode line numbers
 
 %token               END    0     "end of file"
 %locations
@@ -265,6 +272,7 @@ stmt
    | return_stmt          { $$ = $1; }
    | loop_stmt            { $$ = $1; }
    | direct_function_call { $$ = $1; }
+   | dyn_stmt             { $$ = $1; }
    ;
 
 multiple_statements
@@ -281,6 +289,20 @@ block
    : LEFT_BRACKET multiple_statements RIGHT_BRACKET { $$ = $2; }
    | LEFT_BRACKET RIGHT_BRACKET                     { $$ = std::vector<DEL::Element*>(); }
    ;
+
+// 
+// ---------------------------- Global Block ----------------------------
+// 
+
+//global_multiple_statements
+//   : stmt 
+//
+//global_block
+//   : 
+//
+//global_space
+//   : GLOBAL global_block { $$ = DEL::GlobalSpace($2, $1); }
+//   ;
 
 // 
 // ------------------------- Function Statements ------------------------
@@ -493,6 +515,61 @@ object_definition
             $$ = new Object($2, $5, std::vector<DEL::Element*>(), $1);
          }
    ;
+
+// 
+// --------------------------- Dyn Statements ---------------------------
+// 
+
+dyn_stmt
+   : DYN_CREATE LEFT_PAREN identifiers COMMA TYPE assignable_type RIGHT_PAREN SEMI
+      {
+         $$ = new DEL::DynCreate($3, $6, $8);
+      }
+   | DYN_CREATE LEFT_PAREN identifiers COMMA TYPE OBJECT LT identifiers GT RIGHT_PAREN SEMI
+      {
+         $$ = new DEL::DynCreate($3, 
+                                 new EncodedDataType(DEL::DataType::USER_DEFINED, $8),
+                                 $11);
+      }
+   | DYN_EXPAND LEFT_PAREN REF identifiers COMMA VALUE INT_LITERAL RIGHT_PAREN SEMI
+     {
+        $$ = new DEL::DynExpand($4, $7, $9);
+     }
+
+   | DYN_INSERT LEFT_PAREN REF identifiers COMMA INDEX INT_LITERAL COMMA VALUE expression RIGHT_PAREN SEMI
+     {
+        $$ = new DEL::DynInsert($4, $7, $10, $12);
+     }
+   | DYN_APPEND LEFT_PAREN REF identifiers COMMA VALUE expression RIGHT_PAREN SEMI
+     {
+        $$ = new DEL::DynAppend($4, $7, $9);
+     }
+   | DYN_CLEAR LEFT_PAREN REF identifiers RIGHT_PAREN SEMI
+     {
+        $$ = new DEL::DynClear($4, $6);
+     }
+   | DYN_DELETE LEFT_PAREN REF identifiers COMMA INDEX INT_LITERAL RIGHT_PAREN SEMI
+     {
+        $$ = new DEL::DynDelete($4, $7, $9);
+     }
+   | DYN_GET LEFT_PAREN REF identifiers COMMA INDEX INT_LITERAL COMMA DEST REF identifiers RIGHT_PAREN SEMI
+     {
+        $$ = new DEL::DynGet($4, $7, $11, $13);
+     }
+   | DYN_SIZE LEFT_PAREN REF identifiers COMMA DEST REF identifiers RIGHT_PAREN SEMI
+     {
+        $$ = new DEL::DynSize($4, $8, $10);
+     }
+   | DYN_FRONT LEFT_PAREN REF identifiers COMMA DEST REF identifiers RIGHT_PAREN SEMI
+     {
+        $$ = new DEL::DynFront($4, $8, $10);
+     }
+   | DYN_BACK LEFT_PAREN REF identifiers COMMA DEST REF identifiers RIGHT_PAREN SEMI
+     {
+        $$ = new DEL::DynBack($4, $8, $10);
+     }
+   ;
+
 %%
 
 void DEL::DEL_Parser::error( const location_type &l, const std::string &err_message )

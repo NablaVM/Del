@@ -42,6 +42,27 @@ using token = DEL::DEL_Parser::token;
              */ 
             }
 
+"dyn::create" { return token::DYN_CREATE; }
+"dyn::expand" { return token::DYN_EXPAND; }
+"dyn::insert" { return token::DYN_INSERT; }
+"dyn::append" { return token::DYN_APPEND; }
+"dyn::clear"  { return token::DYN_CLEAR;  }
+"dyn::delete" { return token::DYN_DELETE; }
+"dyn::get"    { return token::DYN_GET;    }
+"dyn::size"   { return token::DYN_SIZE;   }
+"dyn::front"  { return token::DYN_FRONT;  }
+"dyn::back"   { return token::DYN_BACK;   }
+
+"type:"       { return token::TYPE;  }
+"value:"      { return token::VALUE; }
+"index:"      { return token::INDEX; }
+"dest:"       { return token::DEST;  }
+
+"global"      { 
+                  yylval->build< int >( yylineno );
+                  return ( token::GLOBAL );    
+              }
+
 "var"      { return token::VAR;    }
 "let"      { return token::LET;    }
 "int"      { return token::INT;    }

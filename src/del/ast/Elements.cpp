@@ -76,4 +76,59 @@ namespace DEL
     {
         visitor.accept(*this);
     }
+
+    void DynCreate::visit(Visitor &visitor)
+    {
+        visitor.accept(*this);
+    }
+
+    void DynExpand::visit(Visitor &visitor)
+    {
+        visitor.accept(*this);
+    }
+
+    void DynInsert::visit(Visitor &visitor)
+    {
+        visitor.accept(*this);
+    }
+
+    void DynAppend::visit(Visitor &visitor)
+    {
+        visitor.accept(*this);
+    }
+
+    void DynClear::visit(Visitor &visitor)
+    {
+        visitor.accept(*this);
+    }
+
+    void DynDelete::visit(Visitor &visitor)
+    {
+        visitor.accept(*this);
+    }
+
+    void DynGet::visit(Visitor &visitor)
+    {
+        visitor.accept(*this);
+    }
+
+    void DynSize::visit(Visitor &visitor)
+    {
+        visitor.accept(*this);
+    }
+
+    void DynFront::visit(Visitor &visitor)
+    {
+        visitor.accept(*this);
+    }
+
+    void DynBack::visit(Visitor &visitor)
+    {
+        visitor.accept(*this);
+    }
+
+    void GlobalSpace::visit(Visitor &visitor)
+    {
+        visitor.accept(*this);
+    }
 }

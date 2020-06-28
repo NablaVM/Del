@@ -33,6 +33,21 @@ namespace DEL
         virtual void accept(Continue   &stmt) override;
         virtual void accept(Break      &stmt) override;
 
+
+        virtual void accept(DynCreate  &stmt) override;
+        virtual void accept(DynExpand  &stmt) override;
+        virtual void accept(DynInsert  &stmt) override;
+        virtual void accept(DynAppend  &stmt) override;
+        virtual void accept(DynClear   &stmt) override;
+        virtual void accept(DynDelete  &stmt) override;
+
+        virtual void accept(DynGet     &stmt) override;
+        virtual void accept(DynSize    &stmt) override;
+        virtual void accept(DynFront   &stmt) override;
+        virtual void accept(DynBack    &stmt) override;
+
+        virtual void accept(GlobalSpace &stmt) override;
+
     private:
 
 

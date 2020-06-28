@@ -298,4 +298,133 @@ namespace DEL
         std::cout << "Analyzer::accept(Break & stmt)" << std::endl;
         std::cout << "\t Name : " << stmt.name << std::endl; 
     }
+
+    // -----------------------------------------------------
+    //
+    // -----------------------------------------------------
+
+    void Analyzer::accept(DynCreate  &stmt)
+    {
+        std::cout << "Analyzer::accept(DynCreate & stmt)" << std::endl;
+        std::cout << "\t Name : " << stmt.var_name << std::endl;
+        std::cout << "\t Type : " << DataType_to_string(stmt.type->dataType) << std::endl;
+        std::cout << "\t Raw  : " << stmt.type->raw << std::endl;
+    }
+
+    // -----------------------------------------------------
+    //
+    // -----------------------------------------------------
+
+    void Analyzer::accept(DynExpand  &stmt)
+    {
+        std::cout << "Analyzer::accept(DynExpand & stmt)" << std::endl;
+        std::cout << "\t Name : " << stmt.var_name << std::endl;
+        std::cout << "\t Amnt : " << stmt.amount   << std::endl;
+    }
+
+    // -----------------------------------------------------
+    //
+    // -----------------------------------------------------
+
+    void Analyzer::accept(DynInsert  &stmt)
+    {
+        std::cout << "Analyzer::accept(DynInsert & stmt)" << std::endl;
+        std::cout << "\t Name : " << stmt.var_name << std::endl;
+        std::cout << "\t Idx  : " << stmt.idx   << std::endl;
+    }
+
+    // -----------------------------------------------------
+    //
+    // -----------------------------------------------------
+
+    void Analyzer::accept(DynAppend  &stmt)
+    {
+        std::cout << "Analyzer::accept(DynAppend & stmt)" << std::endl;
+        std::cout << "\t Name : " << stmt.var_name << std::endl;
+    }
+
+    // -----------------------------------------------------
+    //
+    // -----------------------------------------------------
+
+    void Analyzer::accept(DynClear  &stmt)
+    {
+        std::cout << "Analyzer::accept(DynClear & stmt)" << std::endl;
+        std::cout << "\t Name : " << stmt.var_name << std::endl;
+    }
+
+    // -----------------------------------------------------
+    //
+    // -----------------------------------------------------
+
+    void Analyzer::accept(DynDelete  &stmt)
+    {
+        std::cout << "Analyzer::accept(DynDelete & stmt)" << std::endl;
+        std::cout << "\t Name : " << stmt.var_name << std::endl;
+        std::cout << "\t Idx  : " << stmt.idx << std::endl;
+    }
+
+    // -----------------------------------------------------
+    //
+    // -----------------------------------------------------
+
+    void Analyzer::accept(DynGet  &stmt)
+    {
+        std::cout << "Analyzer::accept(DynGet & stmt)" << std::endl;
+        std::cout << "\t Name : " << stmt.var_name << std::endl;
+        std::cout << "\t Idx  : " << stmt.idx << std::endl;
+        std::cout << "\t Dest : " << stmt.dest << std::endl;
+    }
+
+    // -----------------------------------------------------
+    //
+    // -----------------------------------------------------
+
+    void Analyzer::accept(DynSize  &stmt)
+    {
+        std::cout << "Analyzer::accept(DynSize & stmt)" << std::endl;
+        std::cout << "\t Name : " << stmt.var_name << std::endl;
+        std::cout << "\t Dest : " << stmt.dest << std::endl;
+    }
+
+    // -----------------------------------------------------
+    //
+    // -----------------------------------------------------
+
+    void Analyzer::accept(DynFront  &stmt)
+    {
+        std::cout << "Analyzer::accept(DynFront & stmt)" << std::endl;
+        std::cout << "\t Name : " << stmt.var_name << std::endl;
+        std::cout << "\t Dest : " << stmt.dest << std::endl;
+    }
+
+    // -----------------------------------------------------
+    //
+    // -----------------------------------------------------
+
+    void Analyzer::accept(DynBack  &stmt)
+    {
+        std::cout << "Analyzer::accept(DynBack & stmt)" << std::endl;
+        std::cout << "\t Name : " << stmt.var_name << std::endl;
+        std::cout << "\t Dest : " << stmt.dest << std::endl;
+    }
+
+    // -----------------------------------------------------
+    //
+    // -----------------------------------------------------
+
+    void Analyzer::accept(GlobalSpace  &stmt)
+    {
+        std::cout << "Analyzer::accept(GlobalSpace & stmt)" << std::endl;
+
+        std::cout << "-------------------- GLOBAL --------------------" << std::endl;
+
+        for(auto & e : stmt.elements)
+        {
+            e->visit(*this);
+            delete e;
+        }
+        
+        std::cout << "------------------ END GLOBAL ------------------" << std::endl;
+    }
 }
