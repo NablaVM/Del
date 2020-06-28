@@ -76,8 +76,6 @@ namespace DEL
         Return(Ast * ast_expression, int line_number) : 
             Element(line_number), ast(ast_expression) {}
 
-        ~Return(){ if(ast){ delete ast; } }
-
         virtual void visit(Visitor &visit) override;
 
         Ast * ast;
@@ -95,8 +93,6 @@ namespace DEL
     public:
         Assignment(bool immutable, Ast * ast, EncodedDataType* type_info, int line_number) : 
             Element(line_number), is_immutable(immutable), ast(ast), type_info(type_info) {}
-
-        ~Assignment(){ if(ast) { delete ast; } if(type_info){ delete type_info; } }
 
         virtual void visit(Visitor &visit) override;
 
@@ -159,9 +155,7 @@ namespace DEL
     public:
         WhileLoop(Ast * ast, ElementList elements, int line_number) : 
             Element(line_number), ast(ast), elements(elements) {}
-
-        ~WhileLoop(){ if(ast){ delete ast; } }
-
+            
         virtual void visit(Visitor &visit) override;
 
         Ast * ast;
@@ -454,17 +448,19 @@ namespace DEL
 
     //-----------------------------------------------------------------------
     //
-    //                          GLOBAL ELEMENTS
+    //                          UNIT ELEMENTS
     //
     //-----------------------------------------------------------------------
     
-    class GlobalSpace : public Element
+    class UnitSpace : public Element
     {
     public:
-        GlobalSpace(ElementList elements, int line_number) : Element(line_number){}
+        UnitSpace(std::string name, ElementList elements, int line_number) : 
+            Element(line_number), name(name), elements(elements) {}
 
         virtual void visit(Visitor &visit) override;
 
+        std::string name;
         ElementList elements;
     };
     
@@ -510,7 +506,7 @@ namespace DEL
         virtual void accept(DynFront   &stmt) = 0;
         virtual void accept(DynBack    &stmt) = 0;
 
-        virtual void accept(GlobalSpace &stmt) = 0;
+        virtual void accept(UnitSpace &stmt) = 0;
     };
 }
 

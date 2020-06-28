@@ -76,6 +76,7 @@
 %type<DEL::Element*> loop_stmt;
 
 %type<DEL::Element*> dyn_stmt;
+%type<DEL::Element*> unit_space;
 
 %type<DEL::Ast*> expression;
 %type<DEL::Ast*> assignment_allowed_expression;
@@ -98,6 +99,9 @@
 %type<std::vector<DEL::Element*>> loop_block;
 %type<std::vector<DEL::Element*>> named_loop_block;
 %type<std::vector<DEL::Element*>> object_block;
+
+%type<std::vector<DEL::Element*>> unit_space_multiple_stmts;
+%type<std::vector<DEL::Element*>> unit_block;
 
 %type<Parameter*> single_func_param;
 %type<std::vector<DEL::Parameter*>> function_params;
@@ -138,7 +142,7 @@
 %token <int>         OBJECT         // These tokens encode line numbers
 %token <int>         ELSE           // These tokens encode line numbers
 %token <int>         KEY            // These tokens encode line numbers
-%token <int>         GLOBAL         // These tokens encode line numbers
+%token <int>         UNIT           // These tokens encode line numbers
 
 %token               END    0     "end of file"
 %locations
@@ -152,10 +156,8 @@ start
    ; 
 
 input
-   : function_stmt           { driver.build($1); }
-   | input function_stmt     { driver.build($2); }
-   | object_definition       { driver.build($1); }
-   | input object_definition { driver.build($2); }
+   : unit_space            { driver.build($1); }
+   | input unit_space      { driver.build($2); }
    ;
 
 identifiers
@@ -164,7 +166,16 @@ identifiers
    ;
 
 string_expr
-   : STRING_LITERAL              { $$ = new DEL::Ast(DEL::Ast::NodeType::VALUE, DEL::DataType::STRING, $1, nullptr, nullptr);  }
+   : STRING_LITERAL                 { $$ = new DEL::Ast(DEL::Ast::NodeType::VALUE, DEL::DataType::STRING, $1, nullptr, nullptr);  }
+   | string_expr ADD STRING_LITERAL { $$ = new DEL::Ast(DEL::Ast::NodeType::ADD, 
+                                                        $1, 
+                                                        new DEL::Ast(DEL::Ast::NodeType::VALUE, 
+                                                                     DEL::DataType::STRING, 
+                                                                     $3, 
+                                                                     nullptr, 
+                                                                     nullptr)
+                                                       ); 
+                                    }
    ;
 
 expression
@@ -291,18 +302,28 @@ block
    ;
 
 // 
-// ---------------------------- Global Block ----------------------------
+// ------------------------------ Unit Block ----------------------------
 // 
 
-//global_multiple_statements
-//   : stmt 
-//
-//global_block
-//   : 
-//
-//global_space
-//   : GLOBAL global_block { $$ = DEL::GlobalSpace($2, $1); }
-//   ;
+unit_space_multiple_stmts
+   : stmt                            { $$ = std::vector<DEL::Element*>(); $$.push_back($1); }
+   | function_stmt                   { $$ = std::vector<DEL::Element*>(); $$.push_back($1); }
+   | unit_space_multiple_stmts stmt  { $1.push_back($2); $$ = $1; }
+   | unit_space_multiple_stmts function_stmt { $1.push_back($2); $$ = $1; }
+   | object_definition                { $$ = std::vector<DEL::Element*>(); $$.push_back($1); }
+   | unit_space_multiple_stmts object_definition { $1.push_back($2); $$ = $1; }
+   | unit_space                           { $$ = std::vector<DEL::Element*>(); $$.push_back($1); }
+   | unit_space_multiple_stmts unit_space { $1.push_back($2); $$ = $1; }
+   ;
+
+unit_block
+   : LEFT_BRACKET unit_space_multiple_stmts RIGHT_BRACKET { $$ = $2; }
+   | LEFT_BRACKET RIGHT_BRACKET                     { $$ = std::vector<DEL::Element*>(); }
+   ;
+
+unit_space
+   : UNIT identifiers unit_block { $$ = new DEL::UnitSpace($2, $3, $1); }
+   ;
 
 // 
 // ------------------------- Function Statements ------------------------
@@ -483,12 +504,19 @@ object_assignment
    ;
 
 member_definition
-   : assignable_type COL identifiers SEMI { $$ = new ObjectMember($1, $3, $4); }
+   : assignable_type COL identifiers SEMI          { $$ = new ObjectMember($1, $3, $4); }
+   | OBJECT LT identifiers GT COL identifiers SEMI 
+     { 
+        $$ = new ObjectMember(new DEL::EncodedDataType(DEL::DataType::USER_DEFINED, $3),
+                              $6,
+                              $7);
+     }
    ;
 
 object_stmt
    : member_definition { $$ = $1; }
    | function_stmt     { $$ = $1; }
+   | dyn_stmt             { $$ = $1; }
    ;
 
 multiple_object_stmts

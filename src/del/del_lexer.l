@@ -58,9 +58,9 @@ using token = DEL::DEL_Parser::token;
 "index:"      { return token::INDEX; }
 "dest:"       { return token::DEST;  }
 
-"global"      { 
+"unit"      { 
                   yylval->build< int >( yylineno );
-                  return ( token::GLOBAL );    
+                  return ( token::UNIT );    
               }
 
 "var"      { return token::VAR;    }

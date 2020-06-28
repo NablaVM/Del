@@ -413,18 +413,19 @@ namespace DEL
     //
     // -----------------------------------------------------
 
-    void Analyzer::accept(GlobalSpace  &stmt)
+    void Analyzer::accept(UnitSpace  &stmt)
     {
-        std::cout << "Analyzer::accept(GlobalSpace & stmt)" << std::endl;
+        std::cout << "Analyzer::accept(UnitSpace & stmt)" << std::endl;
+        std::cout << "\t Unit Name : " << stmt.name << std::endl;
+        std::cout << "------------------ UNIT SPACE ------------------" << std::endl;
 
-        std::cout << "-------------------- GLOBAL --------------------" << std::endl;
 
         for(auto & e : stmt.elements)
         {
             e->visit(*this);
             delete e;
         }
-        
-        std::cout << "------------------ END GLOBAL ------------------" << std::endl;
+
+        std::cout << "------------------- END UNIT -------------------" << std::endl;
     }
 }

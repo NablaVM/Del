@@ -46,7 +46,7 @@ namespace DEL
         virtual void accept(DynFront   &stmt) override;
         virtual void accept(DynBack    &stmt) override;
 
-        virtual void accept(GlobalSpace &stmt) override;
+        virtual void accept(UnitSpace &stmt) override;
 
     private:
 

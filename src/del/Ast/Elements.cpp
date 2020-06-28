@@ -127,7 +127,7 @@ namespace DEL
         visitor.accept(*this);
     }
 
-    void GlobalSpace::visit(Visitor &visitor)
+    void UnitSpace::visit(Visitor &visitor)
     {
         visitor.accept(*this);
     }
