@@ -7,7 +7,7 @@
 
 namespace DEL
 {
-   DEL_Driver::DEL_Driver()
+   DEL_Driver::DEL_Driver() : analyzer(code_forge), preprocessor(code_forge)
    {
       
    }
@@ -32,16 +32,20 @@ namespace DEL
    {
       assert( filename != nullptr );
 
-      std::ifstream ifs(filename);
+      // If this fails, things die
+      preprocessor.process(filename);
 
-      if(!ifs.is_open())
+      std::string preproc_file = preprocessor.get_preprocessed_filename();
+
+      std::ifstream in_file(preproc_file);
+      if( ! in_file.good() )
       {
-         std::cerr << "Unable to open : " << filename << std::endl;
+         code_forge.get_reporter().issue_report(
+            new FORGE::CustomReport(FORGE::Report::Level::ERROR, "DEL", ("Developer Error : Preprocessed file : " + preproc_file + " unabel to be opened"))
+         );
+         exit( EXIT_FAILURE );
       }
-
-      parse_helper( ifs );
-
-      ifs.close();
+      parse_helper( in_file );
       return;
    }
 
@@ -128,5 +132,14 @@ namespace DEL
 
       // Delete element
       delete element;
+   }
+
+   // ----------------------------------------------------------
+   //
+   // ----------------------------------------------------------
+
+   void DEL_Driver::preproc_file_directive(std::string directive)
+   {
+      current_file_from_directive = (directive.substr(6, directive.size()));
    }
 }

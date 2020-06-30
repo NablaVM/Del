@@ -36,6 +36,9 @@ using token = DEL::DEL_Parser::token;
             yylval = lval;
 %}
 
+
+(@file.*)  { driver.preproc_file_directive(yytext); }
+
 "int"       { return token::INT;    }
 "real"      { return token::REAL;   }
 "char"      { return token::CHAR;   }
@@ -106,8 +109,6 @@ using token = DEL::DEL_Parser::token;
                yylval->build< int >( yylineno );
                return ( token::SEMI );
            }
-
-(@file.*)  { driver.preproc_file_directive(yytext); }
 
 \/\/.*     { /* ignore comments */ }
 

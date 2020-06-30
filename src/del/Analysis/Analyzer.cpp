@@ -17,7 +17,7 @@ namespace DEL
     //
     // -----------------------------------------------------
 
-    Analyzer::Analyzer()
+    Analyzer::Analyzer(FORGE::Forge & code_forge) : code_forge(code_forge)
     {
     }
 

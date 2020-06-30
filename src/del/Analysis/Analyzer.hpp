@@ -3,6 +3,8 @@
 
 #include "Ast/Elements.hpp"
 
+#include "Forge.hpp"
+
 namespace DEL
 {
     //! \brief The statement analyzer
@@ -11,7 +13,7 @@ namespace DEL
     public:
 
         //! \brief Construct
-        Analyzer();
+        Analyzer(FORGE::Forge & code_forge);
 
         //! \brief Deconstruct
         ~Analyzer();
@@ -50,7 +52,7 @@ namespace DEL
 
     private:
 
-
+        FORGE::Forge & code_forge;
     };
 }
 

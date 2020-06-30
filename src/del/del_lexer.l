@@ -37,6 +37,8 @@ using token = DEL::DEL_Parser::token;
             yylval = lval;
 %}
 
+(@file.*)  { driver.preproc_file_directive(yytext); }
+
 "//".*\n   { /* Single line comment  - This requires a newline, 
                 so if last line if file is // syntax error for now 
              */ 

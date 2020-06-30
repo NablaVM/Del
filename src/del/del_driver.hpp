@@ -11,8 +11,12 @@
 
 #include "Analysis/Analyzer.hpp"
 
+#include "Preprocessor/Preprocessor.hpp"
+
 #include "del_scanner.hpp"
 #include "del_parser.tab.hh"
+
+#include "Forge.hpp"
 
 namespace DEL
 {
@@ -47,6 +51,7 @@ namespace DEL
    private:
 
       Analyzer analyzer;
+      Preprocessor preprocessor;
 
       //! \brief Parse from an istream - Not currently used
       void parse( std::istream &iss );
@@ -60,6 +65,8 @@ namespace DEL
       DEL::DEL_Parser  *parser  = nullptr;
       DEL::DEL_Scanner *scanner = nullptr;
 
+      // The code forge
+      FORGE::Forge code_forge;
    };
 
 }

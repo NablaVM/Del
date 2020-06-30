@@ -26,8 +26,7 @@ set(DEL_COMPILER_HEADERS
     ${DEL_COMPILER_DIR}/Ast/Ast.hpp
     ${DEL_COMPILER_DIR}/Ast/Elements.hpp
 
-    ${DEL_COMPILER_DIR}/Managers/DefinedTypes.hpp
-    ${DEL_COMPILER_DIR}/Managers/SymbolTable.hpp
+    ${DEL_COMPILER_DIR}/Preprocessor/Preprocessor.hpp
 
     ${DEL_COMPILER_DIR}/Types/Variables.hpp
 
@@ -40,6 +39,8 @@ set(DEL_COMPILER_SOURCES
     
     ${DEL_COMPILER_DIR}/Analysis/Analyzer.cpp
     ${DEL_COMPILER_DIR}/Ast/Elements.cpp
+
+    ${DEL_COMPILER_DIR}/Preprocessor/Preprocessor.cpp
 
     ${FLEX_del_lexer_OUTPUTS}
     ${BISON_del_parser_OUTPUTS}

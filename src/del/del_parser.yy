@@ -602,18 +602,12 @@ dyn_stmt
 
 void DEL::DEL_Parser::error( const location_type &l, const std::string &err_message )
 {
-
-   /*
-   DEL::Errors       & error_man = driver.get_error_man_ref();
-   DEL::Preprocessor & preproc   = driver.get_preproc_ref();
-
-   // Report the error
-   error_man.report_syntax_error(
-         l.begin.line,                     // Line where issue appeared
-         l.begin.column,                   // Column where issue appeared
-         err_message,                      // Bison error information
-         preproc.fetch_line(l.begin.line)  // The user line where issue appeared
-   );
-   */
-   std::cerr << "Syntax error >> line: " << l.begin.line << " >> col: " << l.begin.column << std::endl;
+   driver.code_forge.get_reporter().issue_report(
+            new FORGE::SyntaxReport(
+               FORGE::Report::Level::ERROR, 
+               driver.current_file_from_directive,
+               driver.preprocessor.fetch_user_line_number(l.begin.line),
+               l.begin.column,
+               driver.preprocessor.fetch_line(l.begin.line))
+        );
 }

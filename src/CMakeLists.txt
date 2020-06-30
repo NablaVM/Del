@@ -27,6 +27,21 @@ find_package(FLEX REQUIRED)
 
 include_directories(${LIBNABLA_INCLUDE_DIRS})
 
+
+#-------------------------------------------------
+#   Forge - Once developed this will move to a lib
+#-------------------------------------------------
+set(FORGE_DIR
+    ${CMAKE_CURRENT_SOURCE_DIR}/forge
+)
+
+include(${FORGE_DIR}/Forge.cmake)
+
+include_directories(
+    ${FORGE_DIR}
+    ${FORGE_INCLUDE_DIRS}
+)
+
 #-------------------------------------------------
 #   Compilers
 #-------------------------------------------------
@@ -48,6 +63,7 @@ include_directories(
 
 add_executable(del
         main.cpp
+        ${FORGE_SOURCES}
         ${DEL_COMPILER_SOURCES}
 )
 
