@@ -1,7 +1,7 @@
-#ifndef DEL_SYSTEM_SETTINGS_HPP
-#define DEL_SYSTEM_SETTINGS_HPP
+#ifndef FORGE_SYSTEM_SETTINGS_HPP
+#define FORGE_SYSTEM_SETTINGS_HPP
 
-namespace DEL
+namespace FORGE
 {
 namespace SETTINGS
 {

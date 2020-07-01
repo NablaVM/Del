@@ -7,6 +7,10 @@ set(FORGE_INCLUDE_DIRS
 set(FORGE_HEADERS
     ${FORGE_DIR}/Forge.hpp
     ${FORGE_DIR}/ForgeSignal.hpp
+    ${FORGE_DIR}/SystemSettings.hpp
+
+    ${FORGE_DIR}/framework/DataTypes.hpp
+    ${FORGE_DIR}/framework/Primitives.hpp
 
     ${FORGE_DIR}/reporting/Report.hpp
     ${FORGE_DIR}/reporting/Reporter.hpp

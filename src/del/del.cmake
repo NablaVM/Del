@@ -29,8 +29,6 @@ set(DEL_COMPILER_HEADERS
     ${DEL_COMPILER_DIR}/Preprocessor/Preprocessor.hpp
 
     ${DEL_COMPILER_DIR}/Types/Variables.hpp
-
-    ${DEL_COMPILER_DIR}/SystemSettings.hpp
 )
 
 set(DEL_COMPILER_SOURCES
