@@ -40,9 +40,16 @@ namespace DEL
       std::ifstream in_file(preproc_file);
       if( ! in_file.good() )
       {
-         code_forge.get_reporter().issue_report(
-            new FORGE::CustomReport(FORGE::Report::Level::ERROR, "DEL", ("Developer Error : Preprocessed file : " + preproc_file + " unabel to be opened"))
-         );
+        code_forge.get_reporter().issue_report(
+            new FORGE::InternalReport(
+                FORGE::InternalReport::InternalInfo{
+                    "DEL_Driver",
+                    "del_driver.cpp",
+                    "DEL_Driver::parse",
+                    {("Developer Error : Preprocessed file : " + preproc_file + " unabel to be opened")}
+                }
+            )
+        );
          exit( EXIT_FAILURE );
       }
       parse_helper( in_file );
@@ -77,7 +84,16 @@ namespace DEL
       }
       catch( std::bad_alloc &ba )
       {
-         std::cerr << "Failed to allocate scanner: (" << ba.what() << ")\n";
+         code_forge.get_reporter().issue_report(
+            new FORGE::InternalReport(
+                  FORGE::InternalReport::InternalInfo{
+                     "DEL_Driver",
+                     "del_driver.cpp",
+                     "DEL_Driver::parse_helper",
+                     {("Failed to allocate scanner: (" + std::string(ba.what()) + ")")}
+                  }
+            )
+         );
          exit( EXIT_FAILURE );
       }
 
@@ -89,13 +105,31 @@ namespace DEL
       }
       catch( std::bad_alloc &ba )
       {
-         std::cerr << "Failed to allocate parser: (" <<  ba.what() << ")\n";
+         code_forge.get_reporter().issue_report(
+            new FORGE::InternalReport(
+                  FORGE::InternalReport::InternalInfo{
+                     "DEL_Driver",
+                     "del_driver.cpp",
+                     "DEL_Driver::parse_helper",
+                     {("Failed to allocate parser: (" + std::string(ba.what()) + ")")}
+                  }
+            )
+         );
          exit( EXIT_FAILURE );
       }
       const int accept( 0 );
       if( parser->parse() != accept )
       {
-         std::cerr << "Parse failed!!\n";
+         code_forge.get_reporter().issue_report(
+            new FORGE::InternalReport(
+                  FORGE::InternalReport::InternalInfo{
+                     "DEL_Driver",
+                     "del_driver.cpp",
+                     "DEL_Driver::parse_helper",
+                     {"Parse failed!"}
+                  }
+            )
+         );
       }
       return;
    }

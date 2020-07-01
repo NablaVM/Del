@@ -1,4 +1,4 @@
-#include "SyntaxReport.hpp"
+#include "SemanticReport.hpp"
 #include "ReportTypes.hpp"
 
 #include <libnabla/termcolor.hpp>
@@ -9,8 +9,8 @@ namespace FORGE
     //
     // ----------------------------------------------------------
 
-    SyntaxReport::SyntaxReport(Report::Level level, std::string file, int64_t line_number, int col, std::string line) : 
-            Report(ReportType::SYNTAX, level), file(file), line_number(line_number), col(col), line(line)
+    SemanticReport::SemanticReport(Report::Level level, std::string file, int64_t line_number, int col, std::string line, std::vector<std::string> recommendations) : 
+            Report(ReportType::SEMANTIC, level), file(file), line_number(line_number), col(col), line(line), recommendations(recommendations)
     {
 
     }
@@ -19,7 +19,7 @@ namespace FORGE
     //
     // ----------------------------------------------------------
 
-    std::ostream & SyntaxReport::display( std::ostream & stream )
+    std::ostream & SemanticReport::display( std::ostream & stream )
     {
         switch (this->report_level)
         {
@@ -67,6 +67,21 @@ namespace FORGE
             }
         }
 
+        if(recommendations.size() > 0)
+        {
+            stream << termcolor::green << "Recommendations : \n -------------------------" << termcolor::reset << "\n";
+        }
+
+        for(auto & l : recommendations)
+        {
+            stream << l << "\n";
+        }
+
+        if(recommendations.size() > 0)
+        {
+            stream << termcolor::green << "-------------------------" << termcolor::reset << "\n";
+        }
+
         return stream;
     }
 
@@ -74,7 +89,7 @@ namespace FORGE
     //
     // ----------------------------------------------------------
 
-    std::string SyntaxReport::build_error_line() 
+    std::string SemanticReport::build_error_line() 
     {
 
         // Edge case

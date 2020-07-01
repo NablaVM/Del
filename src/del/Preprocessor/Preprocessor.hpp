@@ -46,8 +46,7 @@ namespace DEL
 
         void process_file(std::string file);
         void process_line(std::string line, uint64_t number);
-
-        void send_error(std::string message) const;
+        void send_error(std::string method, std::vector<std::string> information) const;
 
         struct line_no_pair
         {

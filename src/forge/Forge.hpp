@@ -5,17 +5,6 @@
 #include "Reporter.hpp"
 #include <functional>
 
-
-/*
-    Todo : Define callbacks that can be setup so owner of a forge can
-           can be directed to handle fatal errors, if the cb isn't defined
-           the forge can kill the program - This will be triggered from
-           an "ERROR" type report, or an error that occurs within the forge itsself
-
-
-
-*/
-
 namespace FORGE
 {
     //! \brief The Forge object used for instructing systems of code generation

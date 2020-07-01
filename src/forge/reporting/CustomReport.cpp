@@ -24,15 +24,15 @@ namespace FORGE
         switch (this->report_level)
         {
         case Report::Level::WARNING:
-            stream << "[" <<  termcolor::yellow << "WARNING" << termcolor::reset << "]";
+            stream << "[" <<  termcolor::yellow << "WARNING" << termcolor::reset << "] ";
             break;
         
         case Report::Level::INFO:
-            stream << "[" <<  termcolor::cyan << "INFO" << termcolor::reset << "]";
+            stream << "[" <<  termcolor::cyan << "INFO" << termcolor::reset << "] ";
             break;
         
         case Report::Level::ERROR:
-            stream << "[" <<  termcolor::red << "INFO" << termcolor::reset << "]";
+            stream << "[" <<  termcolor::red << "ERROR" << termcolor::reset << "] ";
             break;
         default:
             break;

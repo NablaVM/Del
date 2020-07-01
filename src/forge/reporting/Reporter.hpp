@@ -3,6 +3,8 @@
 
 #include "Report.hpp"
 #include "CustomReport.hpp"
+#include "InternalReport.hpp"
+#include "SemanticReport.hpp"
 #include "SyntaxReport.hpp"
 
 namespace FORGE
@@ -30,9 +32,10 @@ namespace FORGE
 
     private:
         Forge & forge;
-
-        void handle_syntax_report(SyntaxReport * syntax_report);
         void handle_custom_report(CustomReport * custom_report);
+        void handle_internal_report(InternalReport * internal_report);
+        void handle_semantic_report(SemanticReport * syntax_report);
+        void handle_syntax_report(SyntaxReport * syntax_report);
     };
 }
 

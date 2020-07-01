@@ -5,11 +5,11 @@
 
 namespace FORGE
 {
-    //! \brief A syntax report
+    //! \brief A custom report
     class CustomReport : public Report 
     {
     public:
-        //! \brief Build a syntax report
+        //! \brief Build a custom report
         //! \param level The level of the report
         //! \param from Originator of the report
         //! \param report Report to display

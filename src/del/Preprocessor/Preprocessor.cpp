@@ -49,7 +49,7 @@ namespace DEL
         std::ofstream out_file( default_path );
         if( ! out_file.good() )
         {
-            send_error("Unable to open file for preprocessing");
+            send_error("Preprocessor::process",  {"Unable to open file for preprocessing"} );
         }
 
         // Write the preprocessed file
@@ -73,7 +73,7 @@ namespace DEL
         {
             if(!std::filesystem::is_directory(std::filesystem::path(path)))
             {
-                send_error("Given path (" + path + ") us not a directory!");
+                send_error("Preprocessor::add_include_path", {"Given path (" + path + ") us not a directory!"});
             }
             include_paths.push_back(path);
         }
@@ -94,7 +94,7 @@ namespace DEL
         std::ifstream in_file( file );
         if( ! in_file.good() )
         {
-            send_error("Unable to open given input file for preprocessing");
+            send_error("Preprocessor::process_file", {"Unable to open given input file for preprocessing"});
         }
 
         uint64_t line_no = 1;
@@ -168,7 +168,7 @@ namespace DEL
             }
 
             // If we didn't return, then.. well.. thats a problem
-            send_error("Unable to locate file : " + use_file + ", imported from : " + current_file_stack.top());
+            send_error("Preprocessor::process_line", {"Unable to locate file : " + use_file + ", imported from : " + current_file_stack.top()});
         }
 
         /*
@@ -186,7 +186,7 @@ namespace DEL
         if(!preproc_ready)
         {
             // This is a developer error
-            send_error("Developer error : get_preprocessed_filename called before preprocessor was ran");
+            send_error("Preprocessor::get_preprocessed_filename", {"Developer error : get_preprocessed_filename called before preprocessor was ran"});
         }
 
         return preprocessed_file;
@@ -197,14 +197,14 @@ namespace DEL
         if(!preproc_ready)
         {
             // This is a developer error
-            send_error("Developer error : fetch_line called before preprocessor was ran");
+            send_error("Preprocessor::fetch_line", {"Developer error : fetch_line called before preprocessor was ran"});
         }
 
         if(line_number > 0)  { line_number = line_number-1; }
         if((uint64_t)line_number > pre_processed_pair.size() || line_number < 0)
         {
             // This is a developer error
-            send_error("Developer Error : fetch_line requested line out of range");
+            send_error("Preprocessor::fetch_line", {"Developer Error : fetch_line requested line out of range"});
         }
 
         return pre_processed_pair[line_number].line;
@@ -219,14 +219,14 @@ namespace DEL
         if(!preproc_ready)
         {
             // This is a developer error
-            send_error("Developer Error : fetch_user_line_number called before preprocessor was ran");
+            send_error("Preprocessor::fetch_user_line_number", {"Developer Error : fetch_user_line_number called before preprocessor was ran"});
         }
 
         if(line_number > 0)  { line_number = line_number-1; }
         if((uint64_t)line_number > pre_processed_pair.size() || line_number < 0)
         {
             // This is a developer error
-            send_error("Developer Error : fetch_user_line_number requested line out of range");
+            send_error("Preprocessor::fetch_user_line_number", {"Developer Error : fetch_user_line_number requested line out of range"});
         }
 
         return pre_processed_pair[line_number].number;
@@ -236,10 +236,17 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
-    void Preprocessor::send_error(std::string message) const
+    void Preprocessor::send_error(std::string method, std::vector<std::string> information) const
     {
         code_forge.get_reporter().issue_report(
-            new FORGE::CustomReport(FORGE::Report::Level::ERROR, "Preprocessor", message)
+            new FORGE::InternalReport(
+                FORGE::InternalReport::InternalInfo{
+                    "Preprocessor",
+                    "Preprocessor.cpp",
+                    method,
+                    information
+                }
+            )
         );
     }
 }
