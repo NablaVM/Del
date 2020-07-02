@@ -1,8 +1,9 @@
 #ifndef FORGE_FORGE_HPP
 #define FORGE_FORGE_HPP
 
-#include "ForgeSignal.hpp"
-#include "Reporter.hpp"
+#include "ForgeFwd.hpp"
+#include "Memory.hpp"
+
 #include <functional>
 
 namespace FORGE
@@ -27,9 +28,11 @@ namespace FORGE
         Reporter & get_reporter() const;
 
         friend Reporter;
+        friend SymbolTable;
 
     private:
 
+        Memory memory_manager;
         Reporter * reporter;
         std::function<void(ForgeSignal)> forge_signal_handler;
     };

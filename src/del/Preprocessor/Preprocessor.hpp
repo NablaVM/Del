@@ -7,6 +7,7 @@
 #include <stack>
 
 #include "Forge.hpp"
+#include "reporting/Reporter.hpp"
 
 namespace DEL
 {

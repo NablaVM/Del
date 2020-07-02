@@ -1,5 +1,8 @@
 #include "Forge.hpp"
 
+#include "ForgeSignal.hpp"
+#include "Reporter.hpp"
+
 namespace FORGE
 {
 

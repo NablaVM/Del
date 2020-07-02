@@ -4,6 +4,7 @@
 #include "Ast/Elements.hpp"
 
 #include "Forge.hpp"
+#include "framework/SymbolTable.hpp"
 
 namespace DEL
 {
@@ -53,6 +54,7 @@ namespace DEL
     private:
 
         FORGE::Forge & code_forge;
+        FORGE::SymbolTable symbol_table;
     };
 }
 

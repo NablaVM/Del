@@ -17,6 +17,7 @@
 #include "del_parser.tab.hh"
 
 #include "Forge.hpp"
+#include "reporting/Reporter.hpp"
 
 namespace DEL
 {

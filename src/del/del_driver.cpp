@@ -7,7 +7,8 @@
 
 namespace DEL
 {
-   DEL_Driver::DEL_Driver() : analyzer(code_forge), preprocessor(code_forge)
+   DEL_Driver::DEL_Driver() : analyzer(code_forge), 
+                              preprocessor(code_forge)
    {
       
    }

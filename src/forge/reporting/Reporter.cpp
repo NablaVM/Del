@@ -1,5 +1,6 @@
 #include "Reporter.hpp"
 #include "Forge.hpp"
+#include "ForgeSignal.hpp"
 
 namespace FORGE
 {

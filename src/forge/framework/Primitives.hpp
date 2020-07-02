@@ -15,25 +15,34 @@ namespace FORGE
         INTEGER,
         LIST,
         REFERENCE,
+        NIL,
+        UNDEFINED // For marking that given type was undefined, not an undefined type
     };
+
+    static std::string PrimitiveType_to_string(PrimitiveTypes type)
+    {
+        switch(type)
+        {
+            case PrimitiveTypes::CHAR:      return "char";     
+            case PrimitiveTypes::DOUBLE:    return "double";   
+            case PrimitiveTypes::INTEGER:   return "integer";  
+            case PrimitiveTypes::LIST:      return "list";     
+            case PrimitiveTypes::REFERENCE: return "reference";
+            case PrimitiveTypes::NIL:       return "nil";      
+            case PrimitiveTypes::UNDEFINED: return "undefined";
+            default:                        return "undefined";
+        }
+    }
 
     //! \brief A base for "Primitive" data types
     class Primitive : public ForgeDataType
     {
     public:
-        Datum(PrimitiveTypes type, uint8_t minimum_bytes) : 
+        Primitive(PrimitiveTypes type, uint8_t minimum_bytes) : 
             ForgeDataType(DataClassificiation::PRIMITIVE),
             type(type), minimum_bytes(minimum_bytes)
         {
-            switch(type)
-            {
-                case PrimitiveTypes::CHAR:      type_name = "char";      break;
-                case PrimitiveTypes::DOUBLE:    type_name = "double";    break;
-                case PrimitiveTypes::INTEGER:   type_name = "integer";   break;
-                case PrimitiveTypes::LIST:      type_name = "list";      break;
-                case PrimitiveTypes::REFERENCE: type_name = "reference"; break;
-                default:                        type_name = "undefined"; break;
-            }
+            type_name = PrimitiveType_to_string(type);
         }
 
     protected:
@@ -74,6 +83,13 @@ namespace FORGE
     {
     public:
         Reference() : Primitive(PrimitiveTypes::REFERENCE, SETTINGS::SYSTEM_WORD_SIZE_BYTES) {}
+    };
+
+    //! \brief The Nil type
+    class Nil : public Primitive
+    {
+    public:
+        Nil() : Primitive(PrimitiveTypes::NIL, SETTINGS::SYSTEM_WORD_SIZE_BYTES) {}
     };
 }
 

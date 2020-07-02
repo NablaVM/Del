@@ -1,10 +1,16 @@
 #ifndef FORGE_SYSTEM_SETTINGS_HPP
 #define FORGE_SYSTEM_SETTINGS_HPP
 
+#include <libnabla/VSysSettings.hpp>
+
 namespace FORGE
 {
 namespace SETTINGS
 {
+
+    //! \brief Maximum memory dictated by the VSYS
+    static constexpr int MAX_GLOBAL_MEMORY = NABLA::VSYS::NABLA_VSYS_SETTINGS_GLOBAL_MEMORY_BYTES;
+
     //  Settings for reserved spaces in the global stack
     //
     //
