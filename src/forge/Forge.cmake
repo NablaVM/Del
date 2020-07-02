@@ -1,6 +1,7 @@
 set(FORGE_INCLUDE_DIRS
     ${CMAKE_CURRENT_BINARY_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${FORGE_DIR}/builder
     ${FORGE_DIR}/reporting
     ${FORGE_DIR}/framework
 )
@@ -10,6 +11,8 @@ set(FORGE_HEADERS
     ${FORGE_DIR}/ForgeFwd.hpp
     ${FORGE_DIR}/ForgeSignal.hpp
     ${FORGE_DIR}/SystemSettings.hpp
+
+    ${FORGE_DIR}/builder/Builder.hpp
 
     ${FORGE_DIR}/framework/CodeStructures.hpp
     ${FORGE_DIR}/framework/DataTypes.hpp
@@ -28,6 +31,8 @@ set(FORGE_HEADERS
 
 set(FORGE_SOURCES
     ${FORGE_DIR}/Forge.cpp
+
+    ${FORGE_DIR}/builder/Builder.cpp
 
     ${FORGE_DIR}/reporting/Reporter.cpp
     ${FORGE_DIR}/reporting/CustomReport.cpp

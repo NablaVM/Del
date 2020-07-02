@@ -69,7 +69,7 @@ namespace FORGE
 
         if(recommendations.size() > 0)
         {
-            stream << termcolor::yellow << "Recommendations : \n-------------------------" << termcolor::reset << "\n";
+            stream << termcolor::yellow << "Information : \n-------------------------" << termcolor::reset << "\n";
         }
 
         for(auto & l : recommendations)

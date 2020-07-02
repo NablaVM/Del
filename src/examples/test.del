@@ -3,12 +3,11 @@
 unit my_unit {
 
 
-    unit test {
+    func main(int: x, string: z) -> nil {
 
-    }
-
-
-    unit test {
         
+        var mutable_int : int = 4 + 3 - 99 * (5 -4 ); 
+
+        return;
     }
 }

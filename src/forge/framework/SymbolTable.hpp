@@ -48,7 +48,8 @@ namespace FORGE
         //! \brief Add a symbol to the current context
         //! \param symbol The symbol to add
         //! \param type The value type to add as
-        void add_symbol(std::string symbol, PrimitiveTypes type);
+        //! \param is_mutable Flag to indicate if the symbol can be changed
+        void add_symbol(std::string symbol, PrimitiveTypes type, bool is_mutable);
 
         //! \brief Add parameters to the current context
         //! \param params The parameters to add to the context
@@ -83,6 +84,11 @@ namespace FORGE
         //! \returns Type of the given symbol, PrimitiveTypes::UNDEFINED if it doesn't exist
         PrimitiveTypes get_value_type(std::string symbol);
 
+        //! \brief Retrieve the data type of a symbol
+        //! \param symbol The symbol to check for
+        //! \returns True if symbol can be mutated
+        bool get_value_mutability(std::string symbol);
+
         //! \brief Get the name of the current context
         //! \returns String of the current context name
         std::string get_current_context_name() const;
@@ -116,12 +122,18 @@ namespace FORGE
 
         std::string generate_unique(std::string start);
 
+        struct SymbolInfo
+        {
+            PrimitiveTypes type;
+            bool is_mutable;
+        };
+
         class Context
         {
         public:
             Context(std::string name) : context_name(name), return_type(PrimitiveTypes::UNDEFINED) {}
             std::string context_name;
-            std::map< std::string, PrimitiveTypes > symbol_map; 
+            std::map< std::string, SymbolInfo > symbol_map; 
             std::vector<FunctionParam> context_parameters;
             PrimitiveTypes return_type;
         };

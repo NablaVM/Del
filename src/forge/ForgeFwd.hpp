@@ -7,6 +7,7 @@ namespace FORGE
     class Reporter;
     class ForgeSignal;
     class Memory;
+    class Builder;
 }
 
 #endif

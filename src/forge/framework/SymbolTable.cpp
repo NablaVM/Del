@@ -63,7 +63,7 @@ namespace FORGE
                                   << "\" found in context \"" 
                                   << c->context_name 
                                   << "\" defined as : " 
-                                  << PrimitiveType_to_string(c->symbol_map[symbol])
+                                  << PrimitiveType_to_string(c->symbol_map[symbol].type)
                                   << std::endl;
                     }
                     return true;
@@ -177,7 +177,7 @@ namespace FORGE
             {
                 if(c->symbol_map.find(symbol) != c->symbol_map.end())
                 {
-                    if(c->symbol_map[symbol] == type)
+                    if(c->symbol_map[symbol].type == type)
                     {
                         return true;
                     }
@@ -195,11 +195,11 @@ namespace FORGE
     //
     // ----------------------------------------------------------
 
-    void SymbolTable::add_symbol(std::string symbol, PrimitiveTypes type)
+    void SymbolTable::add_symbol(std::string symbol, PrimitiveTypes type, bool is_mutable)
     {
         if(is_locked) { report_lock(); }
         
-        contexts.back()->symbol_map[symbol] = type;
+        contexts.back()->symbol_map[symbol] = { type, is_mutable };
 
         if(forge.memory_manager.is_id_mapped(symbol))
         {
@@ -239,11 +239,32 @@ namespace FORGE
             {
                 if(c->symbol_map.find(symbol) != c->symbol_map.end())
                 {
-                    return c->symbol_map[symbol];
+                    return c->symbol_map[symbol].type;
                 }
             }
         }
         return PrimitiveTypes::UNDEFINED;
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    bool SymbolTable::get_value_mutability(std::string symbol)
+    {
+        if(is_locked) { report_lock(); }
+        
+        for(auto & c : contexts)
+        {
+            if(c != nullptr)
+            {
+                if(c->symbol_map.find(symbol) != c->symbol_map.end())
+                {
+                    return c->symbol_map[symbol].is_mutable;
+                }
+            }
+        }
+        return false;
     }
 
     // ----------------------------------------------------------

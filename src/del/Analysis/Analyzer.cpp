@@ -2,16 +2,114 @@
 
 #include "del_driver.hpp"
 
+// Forge
+#include "SystemSettings.hpp"
+#include "CodeStructures.hpp"
+#include "Builder.hpp"
+
+
 #include <iostream>
 
 namespace DEL
 {
+    //
+    // ===============--------------------------- Converter Methods ---------------------------===============
+    //
+
+    std::vector<FORGE::FunctionParam> convert_params_to_forge_params(std::vector<Parameter*> params)
+    {
+        std::vector<FORGE::FunctionParam> new_params;
+
+        for(auto p : params)
+        {
+            if(p->is_ref)
+            {
+                switch(p->dataType)
+                {
+                    case DataType::INT: new_params.push_back(
+                            FORGE::FunctionParam
+                            {
+                                p->var, 
+                                new FORGE::Reference(new FORGE::Integer())
+                            }
+                        ); 
+                    break;
+                    case DataType::DOUBLE: new_params.push_back(
+                            FORGE::FunctionParam
+                            {
+                                p->var, 
+                                new FORGE::Reference(new FORGE::Double())
+                            }
+                        ); 
+                    break;
+                    case DataType::STRING: new_params.push_back(
+                            FORGE::FunctionParam
+                            {
+                                p->var, 
+                                new FORGE::Reference(new FORGE::List(FORGE::PrimitiveTypes::CHAR))
+                            }
+                        ); 
+                    break;
+                    case DataType::NIL: new_params.push_back(
+                            FORGE::FunctionParam
+                            {
+                                p->var, 
+                                new FORGE::Reference(new FORGE::Nil())
+                            }
+                        ); 
+                    break;
+                    default:
+                        return std::vector<FORGE::FunctionParam>();
+                        break;
+                }
+            }
+            else
+            {
+                switch(p->dataType)
+                {
+                    case DataType::INT:    new_params.push_back(FORGE::FunctionParam{p->var, new FORGE::Integer()}); break;
+                    case DataType::DOUBLE: new_params.push_back(FORGE::FunctionParam{p->var, new FORGE::Double()});  break;
+                    case DataType::STRING: new_params.push_back(FORGE::FunctionParam{p->var, new FORGE::List(FORGE::PrimitiveTypes::CHAR)});  break;
+                    case DataType::NIL:    new_params.push_back(FORGE::FunctionParam{p->var, new FORGE::Nil()}); break;
+                    default:
+                        return std::vector<FORGE::FunctionParam>();
+                        break;
+                }
+            }
+        }
+        return new_params;
+    }
+
+    FORGE::PrimitiveTypes convert_type_to_forge_type(DataType type)
+    {
+        switch(type)
+        {
+            case DataType::INT:    return FORGE::PrimitiveTypes::INTEGER;
+            case DataType::DOUBLE: return FORGE::PrimitiveTypes::DOUBLE;
+            case DataType::STRING: return FORGE::PrimitiveTypes::LIST;
+            case DataType::NIL:    return FORGE::PrimitiveTypes::NIL;
+            case DataType::USER_DEFINED: 
+                std::cerr << "convert_type_to_forge_type() hit case not yet complete" << std::endl;
+                exit(EXIT_FAILURE);
+                return FORGE::PrimitiveTypes::UNDEFINED;
+            case DataType::NONE:
+            default:
+                return FORGE::PrimitiveTypes::UNDEFINED;
+        }
+    }
+
+    //
+    // ===============---------------------------- Analyzer Methods ---------------------------===============
+    //
+    
     // -----------------------------------------------------
     //
     // -----------------------------------------------------
 
     Analyzer::Analyzer(DEL_Driver & driver) : driver(driver)
     {
+        program_watcher.has_main    = false;
+        function_watcher.has_return = false;
     }
 
     // -----------------------------------------------------
@@ -53,7 +151,10 @@ namespace DEL
                 new FORGE::SemanticReport(
                     FORGE::Report::Level::ERROR,
                     driver.current_file_from_directive,
-                    stmt.line_number, 27, "Duplicate context name (" + stmt.name + ") detected", {"Rename unit to be unique"}
+                    driver.preprocessor.fetch_user_line_number(stmt.line_number), 
+                    27, 
+                    "Duplicate context name (" + stmt.name + ") detected", 
+                    {"Rename unit to be unique"}
                 )
             );
         }
@@ -67,7 +168,9 @@ namespace DEL
             delete e;
         }
 
-        // We dont clear the unit contexts ! 
+        // Clear the symbol table for the given unit so elements cant be accessed externally
+        // We dont delete the context though, that way can confirm existence later
+        driver.symbol_table.clear_existing_context(stmt.name);
     }
 
     // -----------------------------------------------------
@@ -83,7 +186,10 @@ namespace DEL
                 new FORGE::SemanticReport(
                     FORGE::Report::Level::ERROR,
                     driver.current_file_from_directive,
-                    stmt.line_number, 27, "Duplicate context name (" + stmt.name + ") detected", {"Rename function to be unique"}
+                    driver.preprocessor.fetch_user_line_number(stmt.line_number), 
+                    27, 
+                    "Duplicate context name (" + stmt.name + ") detected", 
+                    {"Rename function to be unique"}
                 )
             );
         }
@@ -91,38 +197,111 @@ namespace DEL
         // Create a new context
         driver.symbol_table.new_context(stmt.name);
 
-        /*
-
-
-        std::cout << "Analyzer::accept(Function & stmt)" << std::endl 
-                  << "\t Name    : " << stmt.name << std::endl 
-                  << "\t Params  : " << stmt.params.size() << std::endl
-                  << "\t Returns : " << stmt.return_type->raw << std::endl;
-                
-        // This way we dont show the begin/ end bars if there are no params
-        if(stmt.params.size() > 0)
+        if(stmt.name == "main")
         {
-            std::cout << "-------------------- PARAMS --------------------" << std::endl;
-
-            for(auto & p : stmt.params)
-            {
-                std::cout << "PARAM >>>" << std::endl;
-                std::cout << "\t Type : " << DataType_to_string(p->dataType) << std::endl;
-                std::cout << "\t Name : " << p->var << std::endl;
-                std::cout << "\t Obj  : " << p->obj_type << std::endl; 
-                std::cout << "\t Ref? : " << p->is_ref << std::endl;
-            }
-
-            std::cout << "------------------ END PARAMS ------------------" << std::endl;
+            program_watcher.has_main = true;
         }
 
+        // Ensure parameters aren't too many in number
+        if(stmt.params.size() > FORGE::SETTINGS::GS_FUNC_PARAM_RESERVE)
+        {
+            driver.code_forge.get_reporter().issue_report(
+                new FORGE::SemanticReport(
+                    FORGE::Report::Level::ERROR,
+                    driver.current_file_from_directive,
+                    driver.preprocessor.fetch_user_line_number(stmt.line_number),
+                    -1, 
+                    driver.preprocessor.fetch_line(stmt.line_number),
+                    {
+                        "Function parameters exceed number permitted by system (" + std::to_string(FORGE::SETTINGS::GS_FUNC_PARAM_RESERVE) + ")",
+                        "Reduce the number of parameters for the given function"
+                    }
+                )
+            );
+        }
+
+        // Convert our representation of the parameters to the representation that Forge uses
+        std::vector<FORGE::FunctionParam> params = convert_params_to_forge_params(stmt.params);
+
+        // Ensure conversion worked
+        if(params.size() != stmt.params.size())
+        {
+            driver.code_forge.get_reporter().issue_report(
+                new FORGE::InternalReport(
+                    FORGE::InternalReport::InternalInfo
+                    {
+                        "Analyzer",
+                        "Analyzer.cpp",
+                        "Analyzer::accept(Function & stmt)",
+                        {
+                            "There was an error converting function parameters from the front-end representation to the Forge representation.",
+                            "This is an error that should have been stopped by the grammar. Please report this error to the contact information at",
+                            "https://github.com/NablaVM"
+                        }
+                    }
+                )
+            );
+        }
+
+        // Add parameters to context
+        driver.symbol_table.add_parameters_to_current_context(params);
+
+        // Add return type to context
+        driver.symbol_table.add_return_type_to_current_context(
+                convert_type_to_forge_type(stmt.return_type->dataType)
+        );
+
+        driver.code_forge.get_builder().build(
+            new FORGE::Builder::Construct(FORGE::Builder::Construct::Instruction::FUNCTION_BEGIN, stmt.name)
+        );
+
+        current_function = &stmt;
+
+        function_watcher.has_return = false;
+
+        // Add elements
         for(auto & el : stmt.elements)
         {
             // Visit Element
             el->visit(*this);
             delete el;
         }
-*/
+
+        driver.code_forge.get_builder().build(
+            new FORGE::Builder::Construct(FORGE::Builder::Construct::Instruction::FUNCTION_END, stmt.name)
+        );
+
+        // Clear the symbol table for the given function so elements cant be accessed externally
+        // We dont delete the context though, that way can confirm existence later
+        driver.symbol_table.clear_existing_context(stmt.name);
+
+        // Check that the function has been explicitly returned at the end of the function
+        if(!function_watcher.has_return)
+        {
+            driver.code_forge.get_reporter().issue_report(
+                new FORGE::SemanticReport(
+                    FORGE::Report::Level::ERROR,
+                    driver.current_file_from_directive,
+                    driver.preprocessor.fetch_user_line_number(stmt.line_number),
+                    -1, 
+                    driver.preprocessor.fetch_line(stmt.line_number),
+                    {
+                        "Given function does not have a matching return. All functions must be explicitly returned"
+                    }
+                )
+            );
+        }
+
+        current_function = nullptr;
+
+        // Reset the memory manager for alloc variables in new space
+        driver.code_forge.reset_memory();
+
+        // Clean params
+        for(auto & p : stmt.params)
+        {
+            delete p;
+        }
     }
 
     // -----------------------------------------------------
@@ -162,13 +341,28 @@ namespace DEL
 
     void Analyzer::accept(Return & stmt) 
     {
-        /*
+        // If we are in the function context then we can say we have an explicit return
+        std::string context_name = driver.symbol_table.get_current_context_name();
+        if(context_name == current_function->name)
+        {
+            function_watcher.has_return = true;
+        }
+    
         bool has_return = (stmt.ast != nullptr);
 
-        std::cout << "Analyzer::accept(Return & stmt)" << std::endl 
-                  << "\t Returns something?  : " << has_return << std::endl;
-        */
-       report_incomplete("Return");
+        // If there is something to return, we need to construct the return
+        if(has_return)
+        {
+        // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    ISSUE AN EXPR RETURN
+
+
+            report_incomplete("This return indicates that there is something to return; this has not yet been implemented");
+        }
+        else
+        {
+
+        // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    ISSUE A BLANK RETURN
+        }
     }
 
     // -----------------------------------------------------
@@ -183,7 +377,39 @@ namespace DEL
         std::cout << "\t Type      : " << stmt.type_info->raw << std::endl;
         std::cout << "\t Immutable : " << stmt.is_immutable << std::endl;
         */
-       report_incomplete("Assignment");
+
+        // Ensure that the symbol name is unique
+        ensure_unique_symbol(stmt.ast->left->node.data, stmt.line_number);
+
+        // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    ISSUE AN ASSIGNMENT START
+
+        validate_and_execute_assignment_ast(stmt.ast->left->node.data, stmt.ast->right, stmt.type_info->dataType, stmt.line_number);
+
+        // Place in symbol table
+        driver.symbol_table.add_symbol(
+            stmt.ast->left->node.data,                              // Varable name
+            convert_type_to_forge_type(stmt.type_info->dataType),   // Varaible tye
+            !stmt.is_immutable                                      // is_mutable (opposite of whats stored by the statement)
+        );
+
+        // Now that the variable is in the symbol table the emit receiver can get the memory information
+        // to perform the assignment
+
+        /*
+            Note:
+                    The builder isn't started. But it should create space for the variable's memory
+                    address based off the information able to be retireved from the symbol tables's memory object
+                    That memory address should be stuffed in the computational stack, then the create var
+                    should be done
+
+                    Once ASSIGN is hit, it should treat it like an operation. Pop off destination address 
+                    and then pop off computed assignment value, then able to put the computed result into
+                    the DS Store
+        */
+        std::cout << "EMIT : CREATE VAR : " << stmt.ast->left->node.data << std::endl;
+        std::cout << "EMIT : ASSIGN" << std::endl;
+
+        // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    ISSUE AN ASSIGNMENT END
     }
 
     // -----------------------------------------------------
@@ -542,5 +768,289 @@ namespace DEL
         std::cout << "\t Dest : " << stmt.dest << std::endl;
         */
        report_incomplete("DynBack");
+    }
+    
+    //
+    // ===============---------------------------- Analysis Methods ---------------------------===============
+    //
+    
+    // -----------------------------------------------------
+    //
+    // -----------------------------------------------------
+
+    void Analyzer::ensure_unique_symbol(std::string id, int line_no)
+    {
+        if(driver.symbol_table.does_symbol_exist(id, true))
+        {
+            driver.code_forge.get_reporter().issue_report(
+                new FORGE::SemanticReport(
+                    FORGE::Report::Level::ERROR,
+                    driver.current_file_from_directive,
+                    driver.preprocessor.fetch_user_line_number(line_no),
+                    11, 
+                    driver.preprocessor.fetch_line(line_no),
+                    {
+                        "Symbol \"" + id + "\" is not unique" 
+                    }
+                )
+            );
+        }
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    void Analyzer::ensure_id_in_current_context(std::string id, int line_no, std::vector<DataType> allowed)
+    {
+        /*
+            Here (in the future) we need to split the variable by '.' if it contains any
+            to check the context that it references so we can grab the correct variable
+        */
+
+
+        // Check symbol table to see if an id exists, don't display information yet
+        if(!driver.symbol_table.does_symbol_exist(id, false))
+        {
+            // Reports the error and true marks the program for death
+            driver.code_forge.get_reporter().issue_report(
+                new FORGE::SemanticReport(
+                    FORGE::Report::Level::ERROR,
+                    driver.current_file_from_directive,
+                    driver.preprocessor.fetch_user_line_number(line_no),
+                    -1, 
+                    driver.preprocessor.fetch_line(line_no),
+                    {
+                        "Unknown identifier \"" + id + "\"" 
+                    }
+                )
+            );
+        }
+
+        // If allowed is empty, we just wanted to make sure the thing existed
+        if(allowed.size() == 0)
+        {
+            return;
+        }
+
+        // Ensure type is one of the allowed types
+        bool is_allowed = false;
+        for(auto & v : allowed)
+        {
+            if(driver.symbol_table.is_existing_symbol_of_type(id, convert_type_to_forge_type(v)))
+            {
+                is_allowed = true;
+            }
+        }
+
+        // If the type isn't allowed
+        if(!is_allowed)
+        {
+            // Reports the error and true marks the program for death
+            driver.code_forge.get_reporter().issue_report(
+                new FORGE::SemanticReport(
+                    FORGE::Report::Level::ERROR,
+                    driver.current_file_from_directive,
+                    driver.preprocessor.fetch_user_line_number(line_no),
+                    -1, 
+                    driver.preprocessor.fetch_line(line_no),
+                    {
+                        "Type of identifier \"" + id + "\" (" + 
+                            FORGE::PrimitiveType_to_string (driver.symbol_table.get_value_type(id)) + 
+                            ") not permitted in current operation", 
+                    }
+                )
+            );
+        }
+    }
+
+    // -----------------------------------------------------
+    //
+    // -----------------------------------------------------
+
+
+    void Analyzer::validate_and_execute_assignment_ast(std::string var_name, Ast * ast, DataType type, int line_number)
+    {
+        switch(ast->node.node_type)
+        {
+            case Ast::NodeType::IDENTIFIER:  
+            {
+                // Ensure the id is in the current context and its type matches the type of the expression
+                // This means ints/ doubles don't mix. 
+                ensure_id_in_current_context(ast->node.data, line_number, {type});
+
+                std::cout << "EMIT <id>  : " << ast->node.data << std::endl;
+
+                return;
+            }
+            case Ast::NodeType::VALUE:  
+            {
+                std::cout << "EMIT <value> : " << ast->node.data << std::endl;
+                return;
+            }
+            case Ast::NodeType::CALL:  
+            {
+                std::cout << "EMIT <call>  : " << ast->node.data << std::endl;
+                return;
+            }
+            case Ast::NodeType::ROOT:  
+            {
+                driver.code_forge.get_reporter().issue_report(
+                    new FORGE::InternalReport(
+                        {
+                            "DEL::Analyzer",
+                            "Analyzer.cpp",
+                            "validate_and_execute_assignment_ast",
+                            {
+                                "A ROOT node slipped into function. The setup of Analyzer should not have allowed this"
+                            }
+                        }
+                    )
+                );
+                return;
+            }
+            case Ast::NodeType::ADD:  
+            {
+                validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
+                std::cout << "EMIT : ADD " << std::endl;
+                return;
+            }
+            case Ast::NodeType::SUB:  
+            {
+                validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
+                std::cout << "EMIT : SUB " << std::endl;
+                return;
+            }
+            case Ast::NodeType::LTE:  
+            {
+                validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
+                std::cout << "EMIT : LTE " << std::endl;
+                return;
+            }
+            case Ast::NodeType::GTE:  
+            {
+                validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
+                std::cout << "EMIT : GTE " << std::endl;
+                return;
+            }
+            case Ast::NodeType::GT:  
+            {
+                validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
+                std::cout << "EMIT : GT " << std::endl;
+                return;
+            }
+            case Ast::NodeType::LT:  
+            {
+                validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
+                std::cout << "EMIT : LT " << std::endl;
+                return;
+            }
+            case Ast::NodeType::EQ:  
+            {
+                validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
+                std::cout << "EMIT : EQ " << std::endl;
+                return;
+            }
+            case Ast::NodeType::NE:  
+            {
+                validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
+                std::cout << "EMIT : NE " << std::endl;
+                return;
+            }
+            case Ast::NodeType::MUL:  
+            {
+                validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
+                std::cout << "EMIT : MUL " << std::endl;
+                return;
+            }
+            case Ast::NodeType::DIV:  
+            {
+                validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
+                std::cout << "EMIT : DIV " << std::endl;
+                return;
+            }
+            case Ast::NodeType::POW:  
+            {
+                validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
+                std::cout << "EMIT : POW " << std::endl;
+                return;
+            }
+            case Ast::NodeType::MOD:  
+            {
+                validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
+                std::cout << "EMIT : MOD " << std::endl;
+                return;
+            }
+            case Ast::NodeType::LSH:  
+            {
+                validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
+                std::cout << "EMIT : LSH " << std::endl;
+                return;
+            }
+            case Ast::NodeType::RSH:  
+            {
+                validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
+                std::cout << "EMIT : RSH " << std::endl;
+                return;
+            }
+            case Ast::NodeType::BW_XOR:  
+            {
+                validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
+                std::cout << "EMIT : BWXOR " << std::endl;
+                return;
+            }
+            case Ast::NodeType::BW_OR:  
+            {
+                validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
+                std::cout << "EMIT : BWOR " << std::endl;
+                return;
+            } 
+            case Ast::NodeType::BW_AND:  
+            {
+                validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
+                std::cout << "EMIT : BWAND " << std::endl;
+                return;
+            }
+            case Ast::NodeType::OR:  
+            {
+                validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
+                std::cout << "EMIT : OR " << std::endl;
+                return;
+            }
+            case Ast::NodeType::AND:  
+            {
+                validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
+                std::cout << "EMIT : AND " << std::endl;
+                return;
+            }
+            case Ast::NodeType::BW_NOT:  
+            {
+                validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
+                std::cout << "EMIT : NOT " << std::endl;
+                return;
+            }
+            case Ast::NodeType::NEGATE:  
+            {
+                validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
+                std::cout << "EMIT : NEGATE " << std::endl;
+                return;
+            }
+            default:
+            {
+                driver.code_forge.get_reporter().issue_report(
+                    new FORGE::InternalReport(
+                        {
+                            "DEL::Analyzer",
+                            "Analyzer.cpp",
+                            "validate_and_execute_assignment_ast",
+                            {
+                                "Default was accessed while walking the tree. This means a new AST node type was most likely added and not handled."
+                            }
+                        }
+                    )
+                );
+                break;
+            }
+        }
     }
 }

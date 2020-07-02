@@ -2,6 +2,7 @@
 
 #include "ForgeSignal.hpp"
 #include "Reporter.hpp"
+#include "Builder.hpp"
 
 namespace FORGE
 {
@@ -13,6 +14,7 @@ namespace FORGE
     Forge::Forge()
     {
         reporter = new Reporter(*this);
+        builder  = new Builder(*this);
         forge_signal_handler = Default_forge_signal_handler;
     }
 
@@ -22,6 +24,7 @@ namespace FORGE
 
     Forge::~Forge()
     {
+        delete builder;
         delete reporter;
     }
 
@@ -41,5 +44,23 @@ namespace FORGE
     Reporter & Forge::get_reporter() const
     {
         return *reporter;
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    Builder & Forge::get_builder() const
+    {
+        return *builder;
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    void Forge::reset_memory()
+    {
+        memory_manager.reset();
     }
 }

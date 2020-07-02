@@ -75,16 +75,19 @@ namespace FORGE
     class List : public Primitive
     {
     public:
-        List() : Primitive(PrimitiveTypes::LIST, SETTINGS::SYSTEM_WORD_SIZE_BYTES) {}
+        List(PrimitiveTypes list_type) : Primitive(PrimitiveTypes::LIST, SETTINGS::SYSTEM_WORD_SIZE_BYTES),
+            list_type(list_type) {}
+
+        PrimitiveTypes list_type;
     };
 
     //! \brief The Reference type
     class Reference : public Primitive
     {
     public:
-        Reference(PrimitiveTypes referred_type) : Primitive(PrimitiveTypes::REFERENCE, SETTINGS::SYSTEM_WORD_SIZE_BYTES),
+        Reference(Primitive * referred_type) : Primitive(PrimitiveTypes::REFERENCE, SETTINGS::SYSTEM_WORD_SIZE_BYTES),
             referred_type(referred_type) {}
-        PrimitiveTypes referred_type;
+        Primitive * referred_type;
     };
 
     //! \brief The Nil type

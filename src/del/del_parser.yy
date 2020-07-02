@@ -306,9 +306,7 @@ block
 // 
 
 unit_space_multiple_stmts
-   : stmt                            { $$ = std::vector<DEL::Element*>(); $$.push_back($1); }
-   | function_stmt                   { $$ = std::vector<DEL::Element*>(); $$.push_back($1); }
-   | unit_space_multiple_stmts stmt  { $1.push_back($2); $$ = $1; }
+   : function_stmt                   { $$ = std::vector<DEL::Element*>(); $$.push_back($1); }
    | unit_space_multiple_stmts function_stmt { $1.push_back($2); $$ = $1; }
    | object_definition                { $$ = std::vector<DEL::Element*>(); $$.push_back($1); }
    | unit_space_multiple_stmts object_definition { $1.push_back($2); $$ = $1; }
