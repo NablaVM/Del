@@ -3,18 +3,17 @@
 
 #include "Ast/Elements.hpp"
 
-#include "Forge.hpp"
-#include "framework/SymbolTable.hpp"
-
 namespace DEL
 {
+    class DEL_Driver;
+
     //! \brief The statement analyzer
     class Analyzer : public Visitor
     {
     public:
 
         //! \brief Construct
-        Analyzer(FORGE::Forge & code_forge);
+        Analyzer(DEL_Driver & driver);
 
         //! \brief Deconstruct
         ~Analyzer();
@@ -53,8 +52,14 @@ namespace DEL
 
     private:
 
-        FORGE::Forge & code_forge;
-        FORGE::SymbolTable symbol_table;
+        DEL_Driver & driver;
+
+        struct program_watcher
+        {
+            bool has_main;
+        };
+
+        void report_incomplete(std::string what);
     };
 }
 

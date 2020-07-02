@@ -1,15 +1,8 @@
 #include "Analysis/Analyzer.hpp"
 
+#include "del_driver.hpp"
+
 #include <iostream>
-
-/*
-    Right now we want to just accept things and make sure that stuff is getting through from the grammar. 
-    Once everything comes in, THEN develop the emitter. 
-
-    Not before. 
-
-
-*/
 
 namespace DEL
 {
@@ -17,8 +10,7 @@ namespace DEL
     //
     // -----------------------------------------------------
 
-    Analyzer::Analyzer(FORGE::Forge & code_forge) : code_forge(code_forge),
-                                                    symbol_table(code_forge)
+    Analyzer::Analyzer(DEL_Driver & driver) : driver(driver)
     {
     }
 
@@ -31,12 +23,77 @@ namespace DEL
 
     }
 
+    void Analyzer::report_incomplete(std::string what)
+    {
+        driver.code_forge.get_reporter().issue_report(
+            new FORGE::InternalReport(
+                {
+                    "DEL::Analyzer",
+                    "Analyzer.cpp",
+                    "report_incomplete",
+                    {
+                        "The following has been detected by analyzer but is not yet complete:",
+                        ("\t" + what) 
+                    }
+                }
+            )
+        );
+    }
+
+    // -----------------------------------------------------
+    //
+    // -----------------------------------------------------
+
+    void Analyzer::accept(UnitSpace  &stmt)
+    {
+        // Check if the unit context exists
+        if(driver.symbol_table.does_context_exist(stmt.name))
+        {
+            driver.code_forge.get_reporter().issue_report(
+                new FORGE::SemanticReport(
+                    FORGE::Report::Level::ERROR,
+                    driver.current_file_from_directive,
+                    stmt.line_number, 27, "Duplicate context name (" + stmt.name + ") detected", {"Rename unit to be unique"}
+                )
+            );
+        }
+
+        // Create the new context
+        driver.symbol_table.new_context(stmt.name);
+
+        for(auto & e : stmt.elements)
+        {
+            e->visit(*this);
+            delete e;
+        }
+
+        // We dont clear the unit contexts ! 
+    }
+
     // -----------------------------------------------------
     //
     // -----------------------------------------------------
 
     void Analyzer::accept(Function & stmt) 
     {
+        // Ensure function is a unique context
+        if(driver.symbol_table.does_context_exist(stmt.name))
+        {
+            driver.code_forge.get_reporter().issue_report(
+                new FORGE::SemanticReport(
+                    FORGE::Report::Level::ERROR,
+                    driver.current_file_from_directive,
+                    stmt.line_number, 27, "Duplicate context name (" + stmt.name + ") detected", {"Rename function to be unique"}
+                )
+            );
+        }
+
+        // Create a new context
+        driver.symbol_table.new_context(stmt.name);
+
+        /*
+
+
         std::cout << "Analyzer::accept(Function & stmt)" << std::endl 
                   << "\t Name    : " << stmt.name << std::endl 
                   << "\t Params  : " << stmt.params.size() << std::endl
@@ -65,7 +122,7 @@ namespace DEL
             el->visit(*this);
             delete el;
         }
-
+*/
     }
 
     // -----------------------------------------------------
@@ -74,6 +131,7 @@ namespace DEL
 
     void Analyzer::accept(Call & stmt) 
     {
+        /*
         std::cout << "Analyzer::accept(Call & stmt)" << std::endl;
         std::cout << "\t Func   : " << stmt.function_name << std::endl;
         std::cout << "\t Params : " << stmt.params.size() << std::endl;
@@ -94,6 +152,8 @@ namespace DEL
 
             std::cout << "------------------ END PARAMS ------------------" << std::endl;
         }
+        */
+       report_incomplete("Call");
     }
 
     // -----------------------------------------------------
@@ -102,10 +162,13 @@ namespace DEL
 
     void Analyzer::accept(Return & stmt) 
     {
+        /*
         bool has_return = (stmt.ast != nullptr);
 
         std::cout << "Analyzer::accept(Return & stmt)" << std::endl 
                   << "\t Returns something?  : " << has_return << std::endl;
+        */
+       report_incomplete("Return");
     }
 
     // -----------------------------------------------------
@@ -114,10 +177,13 @@ namespace DEL
 
     void Analyzer::accept(Assignment & stmt) 
     {
+        /*
         std::cout << "Analyzer::accept(Assignment & stmt)" << std::endl;
         std::cout << "\t Var       : " << stmt.ast->left->node.data << std::endl;
         std::cout << "\t Type      : " << stmt.type_info->raw << std::endl;
         std::cout << "\t Immutable : " << stmt.is_immutable << std::endl;
+        */
+       report_incomplete("Assignment");
     }
 
     // -----------------------------------------------------
@@ -126,8 +192,11 @@ namespace DEL
 
     void Analyzer::accept(Reassignment & stmt) 
     {
+        /*
         std::cout << "Analyzer::accept(Reassignment & stmt)" << std::endl;
         std::cout << "\t Var       : " << stmt.ast->left->node.data << std::endl;
+        */
+       report_incomplete("Reassignment");
     }
 
     // -----------------------------------------------------
@@ -136,6 +205,7 @@ namespace DEL
 
     void Analyzer::accept(ObjectAssignment & stmt) 
     {
+        /*
         std::cout << "Analyzer::accept(ObjectAssignment & stmt)" << std::endl;
 
         std::cout << "-------------------- ASSIGN --------------------" << std::endl;
@@ -147,6 +217,9 @@ namespace DEL
         }
 
         std::cout << "------------------ END ASSIGN ------------------" << std::endl;
+        */
+
+       report_incomplete("ObjectAssignment");
     }
 
     // -----------------------------------------------------
@@ -155,6 +228,7 @@ namespace DEL
 
     void Analyzer::accept(ObjectReassignment & stmt) 
     {
+        /*
         std::cout << "Analyzer::accept(ObjectAssignment & stmt)" << std::endl;
         std::cout << "\t Name : " << stmt.var << std::endl;
 
@@ -167,6 +241,9 @@ namespace DEL
         }
 
         std::cout << "------------------ END ASSIGN ------------------" << std::endl;
+        */
+
+       report_incomplete("ObjectReassignment");
     }
 
     // -----------------------------------------------------
@@ -175,9 +252,13 @@ namespace DEL
 
     void Analyzer::accept(ObjectMember & stmt) 
     {
+        /*
         std::cout << "Analyzer::accept(ObjectMember & stmt)" << std::endl;
         std::cout << "\t Name : " << stmt.name << std::endl; 
         std::cout << "\t Type : " << stmt.type_info->raw << std::endl;
+        */
+
+       report_incomplete("ObjectMember");
     }
 
     // -----------------------------------------------------
@@ -186,6 +267,7 @@ namespace DEL
 
     void Analyzer::accept(Object & stmt) 
     {
+        /*
         std::cout << "Analyzer::accept(Object & stmt)" << std::endl;
 
         std::cout << "-------------------- PUBLIC --------------------" << std::endl;
@@ -205,6 +287,9 @@ namespace DEL
         }
 
         std::cout << "-------------------- END OBJ -------------------" << std::endl;
+        */
+
+       report_incomplete("Object");
     }
 
     // -----------------------------------------------------
@@ -213,6 +298,7 @@ namespace DEL
 
     void Analyzer::accept(If & stmt) 
     {
+        /*
         std::cout << "Analyzer::accept(If & stmt)" << std::endl;
 
         switch(stmt.type)
@@ -234,6 +320,8 @@ namespace DEL
 
             stmt.trail->visit(*this);
         }
+        */
+       report_incomplete("If");
     }
 
     // -----------------------------------------------------
@@ -242,6 +330,7 @@ namespace DEL
 
     void Analyzer::accept(WhileLoop  &stmt)
     {
+        /*
         std::cout << "Analyzer::accept(WhileLoop & stmt)" << std::endl;
 
         for(auto & e : stmt.elements)
@@ -249,6 +338,8 @@ namespace DEL
             e->visit(*this);
             delete e;
         }
+        */
+       report_incomplete("WhileLoop");
     }
     
     // -----------------------------------------------------
@@ -257,6 +348,7 @@ namespace DEL
 
     void Analyzer::accept(ForLoop    &stmt)
     {
+        /*
         std::cout << "Analyzer::accept(ForLoop & stmt)" << std::endl;
 
         for(auto & e : stmt.elements)
@@ -264,6 +356,9 @@ namespace DEL
             e->visit(*this);
             delete e;
         }
+        */
+
+       report_incomplete("ForLoop");
     }
     
     // -----------------------------------------------------
@@ -272,6 +367,7 @@ namespace DEL
 
     void Analyzer::accept(NamedLoop  &stmt)
     {
+        /*
         std::cout << "Analyzer::accept(NamedLoop & stmt)" << std::endl;
 
         for(auto & e : stmt.elements)
@@ -279,6 +375,8 @@ namespace DEL
             e->visit(*this);
             delete e;
         }
+        */
+       report_incomplete("NamedLoop");
     }
     
     // -----------------------------------------------------
@@ -287,7 +385,10 @@ namespace DEL
 
     void Analyzer::accept(Continue   &stmt)
     {
+        /*
         std::cout << "Analyzer::accept(Continue & stmt)" << std::endl;
+        */
+       report_incomplete("Continue");
     }
     
     // -----------------------------------------------------
@@ -296,8 +397,11 @@ namespace DEL
 
     void Analyzer::accept(Break      &stmt)
     {
+        /*
         std::cout << "Analyzer::accept(Break & stmt)" << std::endl;
         std::cout << "\t Name : " << stmt.name << std::endl; 
+        */
+       report_incomplete("Break");
     }
 
     // -----------------------------------------------------
@@ -306,10 +410,13 @@ namespace DEL
 
     void Analyzer::accept(DynCreate  &stmt)
     {
+        /*
         std::cout << "Analyzer::accept(DynCreate & stmt)" << std::endl;
         std::cout << "\t Name : " << stmt.var_name << std::endl;
         std::cout << "\t Type : " << DataType_to_string(stmt.type->dataType) << std::endl;
         std::cout << "\t Raw  : " << stmt.type->raw << std::endl;
+        */
+       report_incomplete("DynCreate");
     }
 
     // -----------------------------------------------------
@@ -318,9 +425,12 @@ namespace DEL
 
     void Analyzer::accept(DynExpand  &stmt)
     {
+        /*
         std::cout << "Analyzer::accept(DynExpand & stmt)" << std::endl;
         std::cout << "\t Name : " << stmt.var_name << std::endl;
         std::cout << "\t Amnt : " << stmt.amount   << std::endl;
+        */
+       report_incomplete("DynExpand");
     }
 
     // -----------------------------------------------------
@@ -329,9 +439,12 @@ namespace DEL
 
     void Analyzer::accept(DynInsert  &stmt)
     {
+        /*
         std::cout << "Analyzer::accept(DynInsert & stmt)" << std::endl;
         std::cout << "\t Name : " << stmt.var_name << std::endl;
         std::cout << "\t Idx  : " << stmt.idx   << std::endl;
+        */
+       report_incomplete("DynInsert");
     }
 
     // -----------------------------------------------------
@@ -340,8 +453,11 @@ namespace DEL
 
     void Analyzer::accept(DynAppend  &stmt)
     {
+        /*
         std::cout << "Analyzer::accept(DynAppend & stmt)" << std::endl;
         std::cout << "\t Name : " << stmt.var_name << std::endl;
+        */
+       report_incomplete("DynAppend");
     }
 
     // -----------------------------------------------------
@@ -350,8 +466,11 @@ namespace DEL
 
     void Analyzer::accept(DynClear  &stmt)
     {
+        /*
         std::cout << "Analyzer::accept(DynClear & stmt)" << std::endl;
         std::cout << "\t Name : " << stmt.var_name << std::endl;
+        */
+       report_incomplete("DynClear");
     }
 
     // -----------------------------------------------------
@@ -360,9 +479,12 @@ namespace DEL
 
     void Analyzer::accept(DynDelete  &stmt)
     {
+        /*
         std::cout << "Analyzer::accept(DynDelete & stmt)" << std::endl;
         std::cout << "\t Name : " << stmt.var_name << std::endl;
         std::cout << "\t Idx  : " << stmt.idx << std::endl;
+        */
+       report_incomplete("DynDelete");
     }
 
     // -----------------------------------------------------
@@ -371,10 +493,13 @@ namespace DEL
 
     void Analyzer::accept(DynGet  &stmt)
     {
+        /*
         std::cout << "Analyzer::accept(DynGet & stmt)" << std::endl;
         std::cout << "\t Name : " << stmt.var_name << std::endl;
         std::cout << "\t Idx  : " << stmt.idx << std::endl;
         std::cout << "\t Dest : " << stmt.dest << std::endl;
+        */
+       report_incomplete("DynGet");
     }
 
     // -----------------------------------------------------
@@ -383,9 +508,12 @@ namespace DEL
 
     void Analyzer::accept(DynSize  &stmt)
     {
+        /*
         std::cout << "Analyzer::accept(DynSize & stmt)" << std::endl;
         std::cout << "\t Name : " << stmt.var_name << std::endl;
         std::cout << "\t Dest : " << stmt.dest << std::endl;
+        */
+       report_incomplete("DynSize");
     }
 
     // -----------------------------------------------------
@@ -394,9 +522,12 @@ namespace DEL
 
     void Analyzer::accept(DynFront  &stmt)
     {
+        /*
         std::cout << "Analyzer::accept(DynFront & stmt)" << std::endl;
         std::cout << "\t Name : " << stmt.var_name << std::endl;
         std::cout << "\t Dest : " << stmt.dest << std::endl;
+        */
+       report_incomplete("DynFront");
     }
 
     // -----------------------------------------------------
@@ -405,28 +536,11 @@ namespace DEL
 
     void Analyzer::accept(DynBack  &stmt)
     {
+        /*
         std::cout << "Analyzer::accept(DynBack & stmt)" << std::endl;
         std::cout << "\t Name : " << stmt.var_name << std::endl;
         std::cout << "\t Dest : " << stmt.dest << std::endl;
-    }
-
-    // -----------------------------------------------------
-    //
-    // -----------------------------------------------------
-
-    void Analyzer::accept(UnitSpace  &stmt)
-    {
-        std::cout << "Analyzer::accept(UnitSpace & stmt)" << std::endl;
-        std::cout << "\t Unit Name : " << stmt.name << std::endl;
-        std::cout << "------------------ UNIT SPACE ------------------" << std::endl;
-
-
-        for(auto & e : stmt.elements)
-        {
-            e->visit(*this);
-            delete e;
-        }
-
-        std::cout << "------------------- END UNIT -------------------" << std::endl;
+        */
+       report_incomplete("DynBack");
     }
 }

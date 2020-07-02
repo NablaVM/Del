@@ -8,7 +8,7 @@ namespace FORGE
     struct FunctionParam
     {
         std::string symbol; 
-        PrimitiveTypes type;
+        Primitive * type_info;
     };
 
 }

@@ -18,6 +18,7 @@
 
 #include "Forge.hpp"
 #include "reporting/Reporter.hpp"
+#include "framework/SymbolTable.hpp"
 
 namespace DEL
 {
@@ -48,6 +49,7 @@ namespace DEL
       void preproc_file_directive(std::string directive);
 
       friend DEL_Parser;
+      friend Analyzer;
 
    private:
 
@@ -68,6 +70,7 @@ namespace DEL
 
       // The code forge
       FORGE::Forge code_forge;
+      FORGE::SymbolTable symbol_table;
    };
 
 }

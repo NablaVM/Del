@@ -50,7 +50,7 @@ namespace FORGE
             stream << "(Line : " << termcolor::magenta << std::to_string(this->line_number) << termcolor::reset << ")";
         }
 
-        stream << "\n";
+        stream << "\n\n";
 
         // If we have a line, then we can build some colored error location stuff (or we can at least try)
         if(this->line.size() > 0)
@@ -69,18 +69,15 @@ namespace FORGE
 
         if(recommendations.size() > 0)
         {
-            stream << termcolor::green << "Recommendations : \n -------------------------" << termcolor::reset << "\n";
+            stream << termcolor::yellow << "Recommendations : \n-------------------------" << termcolor::reset << "\n";
         }
 
         for(auto & l : recommendations)
         {
-            stream << l << "\n";
+            stream << "\t" << l << "\n";
         }
 
-        if(recommendations.size() > 0)
-        {
-            stream << termcolor::green << "-------------------------" << termcolor::reset << "\n";
-        }
+        stream << "\n\n";
 
         return stream;
     }

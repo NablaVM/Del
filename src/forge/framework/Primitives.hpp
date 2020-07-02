@@ -82,7 +82,9 @@ namespace FORGE
     class Reference : public Primitive
     {
     public:
-        Reference() : Primitive(PrimitiveTypes::REFERENCE, SETTINGS::SYSTEM_WORD_SIZE_BYTES) {}
+        Reference(PrimitiveTypes referred_type) : Primitive(PrimitiveTypes::REFERENCE, SETTINGS::SYSTEM_WORD_SIZE_BYTES),
+            referred_type(referred_type) {}
+        PrimitiveTypes referred_type;
     };
 
     //! \brief The Nil type
