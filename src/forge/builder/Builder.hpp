@@ -42,12 +42,18 @@ namespace FORGE
                 BW_XOR,
                 BW_AND,
                 BW_NOT,
+                LSH, RSH,
                 NEGATE, NEGATE_D,
+                CONCAT,
+                LOAD_RAW,
+                LOAD_ID
             };
 
             Arith(Instruction ins) : BuilderInstruction(BuilderType::ARITH), ins(ins) {}
+            Arith(Instruction ins, std::string data) : BuilderInstruction(BuilderType::ARITH), ins(ins), data(data) {}
 
             Instruction ins;
+            std::string data;
         };
 
         class Conditional : public BuilderInstruction
@@ -92,12 +98,13 @@ namespace FORGE
 
             enum class Instruction
             {
-                ASSIGN_RAW,
-                ASSIGN_REF,
+                CREATE_NEW,
+                //ASSIGN_REF,
             };
 
-            Assign(Instruction ins) : BuilderInstruction(BuilderType::ASSIGN), ins(ins) {}
+            Assign(Instruction ins, std::string data) : BuilderInstruction(BuilderType::ASSIGN), ins(ins), data(data) {}
             Instruction ins;
+            std::string data;
         };
 
         class Construct : public BuilderInstruction

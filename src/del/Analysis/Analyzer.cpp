@@ -381,8 +381,6 @@ namespace DEL
         // Ensure that the symbol name is unique
         ensure_unique_symbol(stmt.ast->left->node.data, stmt.line_number);
 
-        // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    ISSUE AN ASSIGNMENT START
-
         validate_and_execute_assignment_ast(stmt.ast->left->node.data, stmt.ast->right, stmt.type_info->dataType, stmt.line_number);
 
         // Place in symbol table
@@ -406,10 +404,13 @@ namespace DEL
                     and then pop off computed assignment value, then able to put the computed result into
                     the DS Store
         */
-        std::cout << "EMIT : CREATE VAR : " << stmt.ast->left->node.data << std::endl;
-        std::cout << "EMIT : ASSIGN" << std::endl;
 
-        // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    ISSUE AN ASSIGNMENT END
+        driver.code_forge.get_builder().build(
+            new FORGE::Builder::Assign(
+                FORGE::Builder::Assign::Instruction::CREATE_NEW, 
+                stmt.ast->left->node.data
+            )
+        );
     }
 
     // -----------------------------------------------------
@@ -868,7 +869,6 @@ namespace DEL
     //
     // -----------------------------------------------------
 
-
     void Analyzer::validate_and_execute_assignment_ast(std::string var_name, Ast * ast, DataType type, int line_number)
     {
         switch(ast->node.node_type)
@@ -879,13 +879,22 @@ namespace DEL
                 // This means ints/ doubles don't mix. 
                 ensure_id_in_current_context(ast->node.data, line_number, {type});
 
-                std::cout << "EMIT <id>  : " << ast->node.data << std::endl;
+                driver.code_forge.get_builder().build(new FORGE::Builder::Arith(
+                    FORGE::Builder::Arith::Instruction::LOAD_ID,
+                    ast->node.data
+                ));
 
                 return;
             }
             case Ast::NodeType::VALUE:  
             {
-                std::cout << "EMIT <value> : " << ast->node.data << std::endl;
+
+                std::cout << ">>>>>>>>>> Analyzer :: Need to check value is appropriate for type " << std::endl;
+
+                driver.code_forge.get_builder().build(new FORGE::Builder::Arith(
+                    FORGE::Builder::Arith::Instruction::LOAD_RAW,
+                    ast->node.data
+                ));
                 return;
             }
             case Ast::NodeType::CALL:  
@@ -912,127 +921,300 @@ namespace DEL
             case Ast::NodeType::ADD:  
             {
                 validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
-                std::cout << "EMIT : ADD " << std::endl;
+
+                if(type == DataType::INT) { 
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Arith(
+                        FORGE::Builder::Arith::Instruction::ADD
+                    ));
+                }
+                else if (type == DataType::DOUBLE) {
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Arith(
+                        FORGE::Builder::Arith::Instruction::ADD_D
+                    ));
+                }
+                else {
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Arith(
+                        FORGE::Builder::Arith::Instruction::CONCAT
+                    ));
+                }
                 return;
             }
             case Ast::NodeType::SUB:  
             {
                 validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
-                std::cout << "EMIT : SUB " << std::endl;
+                
+                if(type == DataType::INT) { 
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Arith(
+                        FORGE::Builder::Arith::Instruction::SUB
+                    ));
+                }
+                else if (type == DataType::DOUBLE) {
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Arith(
+                        FORGE::Builder::Arith::Instruction::SUB_D
+                    ));
+                }
                 return;
             }
             case Ast::NodeType::LTE:  
             {
                 validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
-                std::cout << "EMIT : LTE " << std::endl;
+                
+                if(type == DataType::INT) { 
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Conditional(
+                        FORGE::Builder::Conditional::Instruction::LTE
+                    ));
+                }
+                else if (type == DataType::DOUBLE) {
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Conditional(
+                        FORGE::Builder::Conditional::Instruction::LTE_D
+                    ));
+                }
                 return;
             }
             case Ast::NodeType::GTE:  
             {
                 validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
-                std::cout << "EMIT : GTE " << std::endl;
+                
+                if(type == DataType::INT) { 
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Conditional(
+                        FORGE::Builder::Conditional::Instruction::GTE
+                    ));
+                }
+                else if (type == DataType::DOUBLE) {
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Conditional(
+                        FORGE::Builder::Conditional::Instruction::GTE_D
+                    ));
+                }
                 return;
             }
             case Ast::NodeType::GT:  
             {
                 validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
-                std::cout << "EMIT : GT " << std::endl;
+                
+                if(type == DataType::INT) { 
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Conditional(
+                        FORGE::Builder::Conditional::Instruction::GT
+                    ));
+                }
+                else if (type == DataType::DOUBLE) {
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Conditional(
+                        FORGE::Builder::Conditional::Instruction::GT_D
+                    ));
+                }
                 return;
             }
             case Ast::NodeType::LT:  
             {
                 validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
-                std::cout << "EMIT : LT " << std::endl;
+                
+                if(type == DataType::INT) { 
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Conditional(
+                        FORGE::Builder::Conditional::Instruction::LT
+                    ));
+                }
+                else if (type == DataType::DOUBLE) {
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Conditional(
+                        FORGE::Builder::Conditional::Instruction::LT_D
+                    ));
+                }
                 return;
             }
             case Ast::NodeType::EQ:  
             {
                 validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
-                std::cout << "EMIT : EQ " << std::endl;
+                
+                if(type == DataType::INT) { 
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Conditional(
+                        FORGE::Builder::Conditional::Instruction::EQ
+                    ));
+                }
+                else if (type == DataType::DOUBLE) {
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Conditional(
+                        FORGE::Builder::Conditional::Instruction::EQ_D
+                    ));
+                }
                 return;
             }
             case Ast::NodeType::NE:  
             {
                 validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
-                std::cout << "EMIT : NE " << std::endl;
+                
+                if(type == DataType::INT) { 
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Conditional(
+                        FORGE::Builder::Conditional::Instruction::NE
+                    ));
+                }
+                else if (type == DataType::DOUBLE) {
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Conditional(
+                        FORGE::Builder::Conditional::Instruction::NE_D
+                    ));
+                }
                 return;
             }
             case Ast::NodeType::MUL:  
             {
                 validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
-                std::cout << "EMIT : MUL " << std::endl;
+                
+                if(type == DataType::INT) { 
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Arith(
+                        FORGE::Builder::Arith::Instruction::MUL
+                    ));
+                }
+                else if (type == DataType::DOUBLE) {
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Arith(
+                        FORGE::Builder::Arith::Instruction::MUL_D
+                    ));
+                }
                 return;
             }
             case Ast::NodeType::DIV:  
             {
                 validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
-                std::cout << "EMIT : DIV " << std::endl;
+                
+                if(type == DataType::INT) { 
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Arith(
+                        FORGE::Builder::Arith::Instruction::DIV
+                    ));
+                }
+                else if (type == DataType::DOUBLE) {
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Arith(
+                        FORGE::Builder::Arith::Instruction::DIV_D
+                    ));
+                }
                 return;
             }
             case Ast::NodeType::POW:  
             {
                 validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
-                std::cout << "EMIT : POW " << std::endl;
+                
+                if(type == DataType::INT) { 
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Arith(
+                        FORGE::Builder::Arith::Instruction::POW
+                    ));
+                }
+                else if (type == DataType::DOUBLE) {
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Arith(
+                        FORGE::Builder::Arith::Instruction::POW_D
+                    ));
+                }
                 return;
             }
             case Ast::NodeType::MOD:  
             {
                 validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
-                std::cout << "EMIT : MOD " << std::endl;
+                
+                if(type == DataType::INT) { 
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Arith(
+                        FORGE::Builder::Arith::Instruction::MOD
+                    ));
+                }
+                else if (type == DataType::DOUBLE) {
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Arith(
+                        FORGE::Builder::Arith::Instruction::MOD_D
+                    ));
+                }
                 return;
             }
             case Ast::NodeType::LSH:  
             {
                 validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
-                std::cout << "EMIT : LSH " << std::endl;
+                
+                driver.code_forge.get_builder().build(new FORGE::Builder::Arith(
+                    FORGE::Builder::Arith::Instruction::LSH
+                ));
                 return;
             }
             case Ast::NodeType::RSH:  
             {
                 validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
-                std::cout << "EMIT : RSH " << std::endl;
+                
+                driver.code_forge.get_builder().build(new FORGE::Builder::Arith(
+                    FORGE::Builder::Arith::Instruction::RSH
+                ));
                 return;
             }
             case Ast::NodeType::BW_XOR:  
             {
                 validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
-                std::cout << "EMIT : BWXOR " << std::endl;
+                
+                driver.code_forge.get_builder().build(new FORGE::Builder::Arith(
+                    FORGE::Builder::Arith::Instruction::BW_XOR
+                ));
                 return;
             }
             case Ast::NodeType::BW_OR:  
             {
                 validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
-                std::cout << "EMIT : BWOR " << std::endl;
+                
+                driver.code_forge.get_builder().build(new FORGE::Builder::Arith(
+                    FORGE::Builder::Arith::Instruction::BW_OR
+                ));
                 return;
             } 
             case Ast::NodeType::BW_AND:  
             {
                 validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
-                std::cout << "EMIT : BWAND " << std::endl;
+                
+                driver.code_forge.get_builder().build(new FORGE::Builder::Arith(
+                    FORGE::Builder::Arith::Instruction::BW_AND
+                ));
                 return;
             }
             case Ast::NodeType::OR:  
             {
                 validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
-                std::cout << "EMIT : OR " << std::endl;
+                
+                if(type == DataType::INT) { 
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Conditional(
+                        FORGE::Builder::Conditional::Instruction::OR
+                    ));
+                }
+                else if (type == DataType::DOUBLE) {
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Conditional(
+                        FORGE::Builder::Conditional::Instruction::OR_D
+                    ));
+                }
                 return;
             }
             case Ast::NodeType::AND:  
             {
                 validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
-                std::cout << "EMIT : AND " << std::endl;
+                
+                if(type == DataType::INT) { 
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Conditional(
+                        FORGE::Builder::Conditional::Instruction::AND
+                    ));
+                }
+                else if (type == DataType::DOUBLE) {
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Conditional(
+                        FORGE::Builder::Conditional::Instruction::AND_D
+                    ));
+                }
                 return;
             }
             case Ast::NodeType::BW_NOT:  
             {
                 validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
-                std::cout << "EMIT : NOT " << std::endl;
+                
+                driver.code_forge.get_builder().build(new FORGE::Builder::Arith(
+                    FORGE::Builder::Arith::Instruction::BW_NOT
+                ));
                 return;
             }
             case Ast::NodeType::NEGATE:  
             {
                 validate_and_execute_assignment_ast(var_name, ast->left, type, line_number); validate_and_execute_assignment_ast(var_name, ast->right, type, line_number);
-                std::cout << "EMIT : NEGATE " << std::endl;
+                
+                if(type == DataType::INT) { 
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Arith(
+                        FORGE::Builder::Arith::Instruction::NEGATE
+                    ));
+                }
+                else if (type == DataType::DOUBLE) {
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Arith(
+                        FORGE::Builder::Arith::Instruction::NEGATE_D
+                    ));
+                }
                 return;
             }
             default:
