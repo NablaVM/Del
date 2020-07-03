@@ -73,6 +73,7 @@ namespace DEL
         void ensure_id_in_current_context(std::string id, int line_no, std::vector<DataType> allowed);
 
 
+        void validate_call(Call & stmt);
 
         void validate_and_execute_assignment_ast(std::string var_name, Ast * ast, DataType type, int line_number);
     };

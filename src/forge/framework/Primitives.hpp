@@ -45,6 +45,8 @@ namespace FORGE
             type_name = PrimitiveType_to_string(type);
         }
 
+        PrimitiveTypes getType() const { return type; }
+
     protected:
         PrimitiveTypes type;    // Type
         uint8_t minimum_bytes;  // Minimum number of bytes to hold item

@@ -37,6 +37,7 @@ namespace FORGE
         case BuilderType::FLOW:         handle( static_cast<Flow*>(instruction)        ); break;
         case BuilderType::ASSIGN:       handle( static_cast<Assign*>(instruction)      ); break;
         case BuilderType::CONSTRUCT:    handle( static_cast<Construct*>(instruction)   ); break; 
+        case BuilderType::CALL:         handle( static_cast<Call*>(instruction)        ); break; 
         default:
             forge.get_reporter().issue_report(
                 new FORGE::InternalReport(
@@ -91,6 +92,9 @@ namespace FORGE
                  std::cout << "LOAD_RAW >> " << ins->data << std::endl;  
                  break;
 
+            case Builder::Arith::Instruction::LOAD_RAW_STR: 
+                 std::cout << "LOAD_RAW_STR >> " << ins->data << std::endl;  
+                 break;
 
             case Builder::Arith::Instruction::LOAD_ID:  
                  std::cout << "LOAD_ID >> " << ins->data << std::endl;  
@@ -142,8 +146,6 @@ namespace FORGE
         {
             case Builder::Flow::Instruction::RETURN   : std::cout << "RETURN  " << std::endl; break;
             case Builder::Flow::Instruction::RETURN_D : std::cout << "RETURN_D" << std::endl; break;
-            case Builder::Flow::Instruction::CALL     : std::cout << "CALL    " << std::endl; break;
-            case Builder::Flow::Instruction::CALL_D   : std::cout << "CALL_D  " << std::endl; break;
             case Builder::Flow::Instruction::FOR      : std::cout << "FOR     " << std::endl; break;
             case Builder::Flow::Instruction::FOR_D    : std::cout << "FOR_D   " << std::endl; break;
             case Builder::Flow::Instruction::WHILE    : std::cout << "WHILE   " << std::endl; break;
@@ -163,7 +165,7 @@ namespace FORGE
         switch(ins->ins)
         {
             case Builder::Assign::Instruction::CREATE_NEW: std::cout << "CREATE_NEW : " << ins->data << std::endl; break;
-            //case Builder::Assign::Instruction::ASSIGN_REF: std::cout << "ASSIGN_REF" << std::endl; break;
+            case Builder::Assign::Instruction::REASSIGN:   std::cout << "REASSIGN   : " << ins->data << std::endl; break;
         }
     }
 
@@ -180,6 +182,29 @@ namespace FORGE
         {
             case Builder::Construct::Instruction::FUNCTION_BEGIN: std::cout << "FUNCTION_BEGIN : " << ins->data << std::endl; break;
             case Builder::Construct::Instruction::FUNCTION_END:   std::cout << "FUNCTION_END   : " << ins->data << std::endl; break;
+        }
+    }
+
+    // -----------------------------------------------------
+    //
+    // -----------------------------------------------------
+    
+    void Builder::handle(Call   * ins)
+    {
+        std::cout << "BUILDER::handle(Call) >> ";
+
+        // Temp for dev
+        switch(ins->ins)
+        {
+            case Builder::Call::Instruction::CALL      : std::cout << "CALL       : " << std::endl; break;
+            case Builder::Call::Instruction::CALL_R    : std::cout << "CALL_R     : " << std::endl; break;
+            case Builder::Call::Instruction::PREP_PARAM:
+            
+                std::cout << "PREP_PARAM | data:  " << ins->data << " is_ref : " << ins->is_ref
+                          << " type : " << PrimitiveType_to_string(ins->type) << std::endl; 
+                
+                break;
+            case Builder::Call::Instruction::LOAD_PARAM: std::cout << "LOAD_PARAM : " << ins->data << std::endl; break;
         }
     }
 }

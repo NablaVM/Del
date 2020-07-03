@@ -98,6 +98,19 @@ namespace DEL
         }
     }
 
+    DataType convert_type_to_data_type(FORGE::PrimitiveTypes type)
+    {
+        switch(type)
+        {
+            case FORGE::PrimitiveTypes::INTEGER: return DataType::INT;   
+            case FORGE::PrimitiveTypes::DOUBLE:  return DataType::DOUBLE;
+            case FORGE::PrimitiveTypes::LIST:    return DataType::STRING;
+            case FORGE::PrimitiveTypes::NIL:     return DataType::NIL;
+            default:
+                return DataType::NONE;
+        }
+    }
+
     //
     // ===============---------------------------- Analyzer Methods ---------------------------===============
     //
@@ -310,6 +323,26 @@ namespace DEL
 
     void Analyzer::accept(Call & stmt) 
     {
+        validate_call(stmt);
+
+
+        #warning Analyzer::accept(Call & stmt) > We need to find a better way to pass param info to Builder
+        #warning ---> we lose the fact that its a variable in validation
+
+        int param_number = 0;
+        for(auto & p : stmt.params)
+        {
+            driver.code_forge.get_builder().build(
+                new FORGE::Builder::Call(
+                    FORGE::Builder::Call::Instruction::PREP_PARAM,      // Indicate we want to prepare for call
+                    p->is_ref,                                          // Pass flag for if its a reference
+                    convert_type_to_forge_type(p->dataType),            // Pass the type that the data will be
+                    p->var,                                             // Pass the variable
+                    param_number++                                      // Inidcate what number the variable is
+                )
+            );
+        }
+
         /*
         std::cout << "Analyzer::accept(Call & stmt)" << std::endl;
         std::cout << "\t Func   : " << stmt.function_name << std::endl;
@@ -332,7 +365,7 @@ namespace DEL
             std::cout << "------------------ END PARAMS ------------------" << std::endl;
         }
         */
-       report_incomplete("Call");
+       //report_incomplete("Call");
     }
 
     // -----------------------------------------------------
@@ -371,17 +404,18 @@ namespace DEL
 
     void Analyzer::accept(Assignment & stmt) 
     {
-        /*
-        std::cout << "Analyzer::accept(Assignment & stmt)" << std::endl;
-        std::cout << "\t Var       : " << stmt.ast->left->node.data << std::endl;
-        std::cout << "\t Type      : " << stmt.type_info->raw << std::endl;
-        std::cout << "\t Immutable : " << stmt.is_immutable << std::endl;
-        */
-
         // Ensure that the symbol name is unique
         ensure_unique_symbol(stmt.ast->left->node.data, stmt.line_number);
 
-        validate_and_execute_assignment_ast(stmt.ast->left->node.data, stmt.ast->right, stmt.type_info->dataType, stmt.line_number);
+        // Validate and execute the instructions for assignment. This will send commandss to FORGE to build
+        // the assignment. All that will be left is to issue the creation of the variable once we
+        // actually add the symbol to the symbol table
+        validate_and_execute_assignment_ast(
+            stmt.ast->left->node.data, 
+            stmt.ast->right, 
+            stmt.type_info->dataType, 
+            stmt.line_number
+        );
 
         // Place in symbol table
         driver.symbol_table.add_symbol(
@@ -392,19 +426,6 @@ namespace DEL
 
         // Now that the variable is in the symbol table the emit receiver can get the memory information
         // to perform the assignment
-
-        /*
-            Note:
-                    The builder isn't started. But it should create space for the variable's memory
-                    address based off the information able to be retireved from the symbol tables's memory object
-                    That memory address should be stuffed in the computational stack, then the create var
-                    should be done
-
-                    Once ASSIGN is hit, it should treat it like an operation. Pop off destination address 
-                    and then pop off computed assignment value, then able to put the computed result into
-                    the DS Store
-        */
-
         driver.code_forge.get_builder().build(
             new FORGE::Builder::Assign(
                 FORGE::Builder::Assign::Instruction::CREATE_NEW, 
@@ -419,11 +440,30 @@ namespace DEL
 
     void Analyzer::accept(Reassignment & stmt) 
     {
-        /*
-        std::cout << "Analyzer::accept(Reassignment & stmt)" << std::endl;
-        std::cout << "\t Var       : " << stmt.ast->left->node.data << std::endl;
-        */
-       report_incomplete("Reassignment");
+        // Ensure the variable exists
+        ensure_id_in_current_context(stmt.ast->left->node.data, stmt.line_number, {});
+
+        // Get the type that we represent the thing as
+        DataType type =  convert_type_to_data_type(
+                            driver.symbol_table.get_value_type(stmt.ast->left->node.data)
+                            );
+
+        // Validate and execute the instructions for assignment. This will send commandss to FORGE to build
+        // the assignment. All that will be left is to issue the reassignment
+        validate_and_execute_assignment_ast(
+            stmt.ast->left->node.data, 
+            stmt.ast->right, 
+            type, 
+            stmt.line_number
+        );
+
+        // Instructions are ready to have reassignment triggered
+        driver.code_forge.get_builder().build(
+            new FORGE::Builder::Assign(
+                FORGE::Builder::Assign::Instruction::REASSIGN, 
+                stmt.ast->left->node.data
+            )
+        );
     }
 
     // -----------------------------------------------------
@@ -809,7 +849,6 @@ namespace DEL
             to check the context that it references so we can grab the correct variable
         */
 
-
         // Check symbol table to see if an id exists, don't display information yet
         if(!driver.symbol_table.does_symbol_exist(id, false))
         {
@@ -869,10 +908,123 @@ namespace DEL
     //
     // -----------------------------------------------------
 
+    void Analyzer::validate_call(Call & stmt)
+    {
+        // Disallow recursion until we come up with a way to handle it in the ASM
+        //
+        if(stmt.function_name == current_function->name)
+        {
+            driver.code_forge.get_reporter().issue_report(
+                new FORGE::InternalReport(
+                    {
+                        "DEL::Analyzer",
+                        "Analyzer.cpp",
+                        "validate_call",
+                        {
+                            "Recursion is not yet supported. A recursive call was detected on line : " + 
+                            std::to_string(stmt.line_number) + " of file : " + driver.current_file_from_directive
+                        }
+                    }
+                )
+            );
+        }
+
+        /*
+        
+            We will need to 'drill into contexts;
+
+            >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        
+        */
+
+        //  Check if the context exists
+        //
+        if(!driver.symbol_table.does_context_exist(stmt.function_name))
+        {
+            driver.code_forge.get_reporter().issue_report(
+                new FORGE::SemanticReport(
+                    FORGE::Report::Level::ERROR,
+                    driver.current_file_from_directive,
+                    driver.preprocessor.fetch_user_line_number(stmt.line_number),
+                    -1, 
+                    driver.preprocessor.fetch_line(stmt.line_number),
+                    {
+                        "Method name does not exist"
+                    }
+                )
+            );
+        }
+
+        std::vector<FORGE::FunctionParam> params = driver.symbol_table.get_context_parameters(stmt.function_name);
+
+        // Ensure that the parameters are the size we expect
+        if(params.size() != stmt.params.size())
+        {
+            driver.code_forge.get_reporter().issue_report(
+                new FORGE::SemanticReport(
+                    FORGE::Report::Level::ERROR,
+                    driver.current_file_from_directive,
+                    driver.preprocessor.fetch_user_line_number(stmt.line_number),
+                    -1, 
+                    driver.preprocessor.fetch_line(stmt.line_number),
+                    {
+                        "Mismatched number of parameters given for call to : " + stmt.function_name,
+                        "Expected " + std::to_string(params.size()) + ", but given " + std::to_string(stmt.params.size())
+                    }
+                )
+            );
+        }
+
+        //  Ensure all parameters exist, and if they do set the type
+        //
+        for( auto & p : stmt.params)
+        {
+            // If the data type is an ID_STRING we need to figure out its type
+            if(p->dataType == DataType::ID_STRING)
+            {
+                ensure_id_in_current_context(p->var, stmt.line_number, {});
+
+                p->dataType = convert_type_to_data_type(
+                    driver.symbol_table.get_value_type(p->var)
+                );
+            }
+        }
+
+        //  Check that the types match what we expect
+        //
+        for(uint16_t i = 0; i < stmt.params.size(); i++ )
+        {
+            if(stmt.params[i]->dataType != convert_type_to_data_type(params[i].type_info->getType()))
+            {
+                driver.code_forge.get_reporter().issue_report(
+                    new FORGE::SemanticReport(
+                        FORGE::Report::Level::ERROR,
+                        driver.current_file_from_directive,
+                        driver.preprocessor.fetch_user_line_number(stmt.line_number),
+                        -1, 
+                        driver.preprocessor.fetch_line(stmt.line_number),
+                        {
+                            "Given parameter \"" + stmt.params[i]->var + "\" doesn't match expected data type for call to : " + stmt.function_name,
+                            "Received type  : " + DataType_to_string(stmt.params[i]->dataType),
+                            "Expected type  : " + DataType_to_string(convert_type_to_data_type(params[i].type_info->getType()))
+                        }
+                    )
+                );
+            }
+        }
+    }
+
+    // -----------------------------------------------------
+    //
+    // -----------------------------------------------------
+
     void Analyzer::validate_and_execute_assignment_ast(std::string var_name, Ast * ast, DataType type, int line_number)
     {
         switch(ast->node.node_type)
         {
+            //
+            //      IDENTIFIER
+            //
             case Ast::NodeType::IDENTIFIER:  
             {
                 // Ensure the id is in the current context and its type matches the type of the expression
@@ -886,17 +1038,55 @@ namespace DEL
 
                 return;
             }
+            //
+            //      VALUE
+            //
             case Ast::NodeType::VALUE:  
             {
+                //  Ensure that the type of the item in the expression matches that of the  variable 
+                //  type that its being assigned to
+                //
+                if(type != ast->node.data_type)
+                {
+                    driver.code_forge.get_reporter().issue_report(
+                        new FORGE::SemanticReport(
+                            FORGE::Report::Level::ERROR,
+                            driver.current_file_from_directive,
+                            driver.preprocessor.fetch_user_line_number(line_number),
+                            -1, 
+                            driver.preprocessor.fetch_line(line_number),
+                            {
+                                "Type of \"" + ast->node.data + "\" is \"" + DataType_to_string(ast->node.data_type) + 
+                                "\", which is incompatible with type of \"" + var_name + 
+                                "\" which is type \"" + DataType_to_string(type) + "\"\n"
+                            }
+                        )
+                    );
+                }
 
-                std::cout << ">>>>>>>>>> Analyzer :: Need to check value is appropriate for type " << std::endl;
-
-                driver.code_forge.get_builder().build(new FORGE::Builder::Arith(
-                    FORGE::Builder::Arith::Instruction::LOAD_RAW,
-                    ast->node.data
-                ));
+                if(type == DataType::STRING)
+                {
+                    //  If the type is string, we need to do a specific load to handle the string
+                    //
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Arith(
+                        FORGE::Builder::Arith::Instruction::LOAD_RAW_STR,
+                        ast->node.data
+                    ));
+                }
+                else
+                {
+                    //  If the type isn't a string we do a standard load_raw
+                    //
+                    driver.code_forge.get_builder().build(new FORGE::Builder::Arith(
+                        FORGE::Builder::Arith::Instruction::LOAD_RAW,
+                        ast->node.data
+                    ));
+                }
                 return;
             }
+            //
+            //      EXPR CALL
+            //
             case Ast::NodeType::CALL:  
             {
                 std::cout << "EMIT <call>  : " << ast->node.data << std::endl;

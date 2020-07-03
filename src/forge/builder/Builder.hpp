@@ -2,6 +2,7 @@
 #define FORGE_BUILDER_HPP
 
 #include "Forge.hpp"
+#include "Primitives.hpp"
 #include <string>
 
 namespace FORGE
@@ -15,7 +16,8 @@ namespace FORGE
             CONDITIONAL,
             FLOW,
             ASSIGN,
-            CONSTRUCT
+            CONSTRUCT,
+            CALL
         };
 
         class BuilderInstruction
@@ -46,6 +48,7 @@ namespace FORGE
                 NEGATE, NEGATE_D,
                 CONCAT,
                 LOAD_RAW,
+                LOAD_RAW_STR,
                 LOAD_ID
             };
 
@@ -54,6 +57,34 @@ namespace FORGE
 
             Instruction ins;
             std::string data;
+        };
+
+        class Call : public BuilderInstruction
+        {
+        public:
+        
+            enum class Instruction
+            {
+                PREP_PARAM,     // Move a parameter's address before a call
+                LOAD_PARAM,     // Load a parameter's address from a call
+                CALL,           // Call something, don't expect a return
+                CALL_R          // Call and expect a return
+            };
+
+
+            // Issue an actual call
+            Call(Instruction ins, std::string data) : 
+                BuilderInstruction(BuilderType::CALL), ins(ins), data(data) {}
+
+            // Load a parameter 
+            Call(Instruction ins, bool is_ref, PrimitiveTypes type, std::string data, int param_number) : 
+                BuilderInstruction(BuilderType::CALL), ins(ins), is_ref(is_ref), type(type), data(data), param_number(param_number){}
+
+            Instruction ins;
+            bool is_ref;
+            PrimitiveTypes type;
+            std::string data;
+            int param_number;
         };
 
         class Conditional : public BuilderInstruction
@@ -83,7 +114,6 @@ namespace FORGE
             enum class Instruction
             {
                 RETURN, RETURN_D,
-                CALL,   CALL_D  ,
                 FOR,    FOR_D   ,
                 WHILE,  WHILE_D 
             };
@@ -99,6 +129,7 @@ namespace FORGE
             enum class Instruction
             {
                 CREATE_NEW,
+                REASSIGN,
                 //ASSIGN_REF,
             };
 
@@ -136,6 +167,7 @@ namespace FORGE
         void handle(Flow        * ins);
         void handle(Assign      * ins);
         void handle(Construct   * ins);
+        void handle(Call        * ins);
     };
 }
 #endif
