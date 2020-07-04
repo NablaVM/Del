@@ -44,17 +44,6 @@ using token = DEL::DEL_Parser::token;
              */ 
             }
 
-"dyn::create" { return token::DYN_CREATE; }
-"dyn::expand" { return token::DYN_EXPAND; }
-"dyn::insert" { return token::DYN_INSERT; }
-"dyn::append" { return token::DYN_APPEND; }
-"dyn::clear"  { return token::DYN_CLEAR;  }
-"dyn::delete" { return token::DYN_DELETE; }
-"dyn::get"    { return token::DYN_GET;    }
-"dyn::size"   { return token::DYN_SIZE;   }
-"dyn::front"  { return token::DYN_FRONT;  }
-"dyn::back"   { return token::DYN_BACK;   }
-
 "type:"       { return token::TYPE;  }
 "value:"      { return token::VALUE; }
 "index:"      { return token::INDEX; }
@@ -73,12 +62,7 @@ using token = DEL::DEL_Parser::token;
 "nil"      { return token::NIL;    }
 "->"       { return token::ARROW;  }
 "return"   { return token::RETURN; }
-"pub"      { return token::PUB;    }
-"priv"     { return token::PRIV;   }
-"object"   { 
-               yylval->build< int >( yylineno );
-               return ( token::OBJECT );    
-           }
+
 "if"       { return token::IF;     }
 "elif"     { return token::ELIF;   }
 

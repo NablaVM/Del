@@ -5,6 +5,7 @@
 
 #include "del/del_driver.hpp"
 
+
 namespace
 {
     struct Args
@@ -72,7 +73,6 @@ int main(int argc, char ** argv)
 int handle_compilation(std::string file)
 {
     DEL::DEL_Driver driver;
-
     driver.parse(file.c_str());
 
     return 0;

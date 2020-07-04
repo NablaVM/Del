@@ -1,31 +1,6 @@
+func main() -> nil {
 
-unit outer {
+    let an_int : int = 4 + 4 * a; 
 
-    func moot() -> nil {
-
-
-        return;
-    }
-}
-
-
-unit my_unit {
-
-    func toot(int: a, int: b) -> nil {
-
-        return;
-    }
-
-    func main(int: x, string: z) -> nil {
-
-        var mutable_int : int = 44 + 3 - 99 * (5 -4 ); 
-
-        //var mutable_str : string = "This is a string" + "moot";
-
-        mutable_int = 4;
-
-        toot(mutable_int, 3);
-
-        return;
-    }
+    return;
 }

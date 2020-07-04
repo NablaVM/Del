@@ -18,7 +18,6 @@
 
 #include "Forge.hpp"
 #include "reporting/Reporter.hpp"
-#include "framework/SymbolTable.hpp"
 
 namespace DEL
 {
@@ -70,7 +69,6 @@ namespace DEL
 
       // The code forge
       FORGE::Forge code_forge;
-      FORGE::SymbolTable symbol_table;
    };
 
 }

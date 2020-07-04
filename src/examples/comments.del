@@ -1,0 +1,14 @@
+unit comments {
+
+    // This is an example of a comment
+
+    func main() -> nil {
+
+        var a : int = 23;  // This is a comment after a thing
+
+        return;
+    }
+
+// This is a comment to tell you that comments at the very bottom of the file is disallowed (after the next })
+// This might seem lame, but its a hill im willing to die on
+}

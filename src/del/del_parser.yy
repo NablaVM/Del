@@ -62,11 +62,6 @@
 %type<DEL::Element*> function_stmt;
 %type<DEL::Element*> direct_function_call;
 
-%type<DEL::Element*> object_assignment;
-%type<DEL::Element*> object_definition;
-%type<DEL::Element*> object_stmt;
-%type<DEL::Element*> member_definition;
-
 %type<DEL::Element*> if_stmt;
 %type<DEL::Element*> elif_stmt;
 %type<DEL::Element*> else_stmt;
@@ -74,9 +69,6 @@
 %type<DEL::Element*> loops_only_stmts;
 %type<DEL::Element*> named_loops_only_stmts;
 %type<DEL::Element*> loop_stmt;
-
-%type<DEL::Element*> dyn_stmt;
-%type<DEL::Element*> unit_space;
 
 %type<DEL::Ast*> expression;
 %type<DEL::Ast*> assignment_allowed_expression;
@@ -89,19 +81,12 @@
 %type<EncodedDataType*> assignable_type;
 %type<EncodedDataType*> returnable_type;
 
-%type<std::vector<DEL::Element*>> multiple_object_stmts;
 %type<std::vector<DEL::Element*>> multiple_statements;
-%type<std::vector<DEL::Element*>> multiple_assignments;
 %type<std::vector<DEL::Element*>> multiple_loop_statements;
 %type<std::vector<DEL::Element*>> multiple_named_loop_statements;
-%type<std::vector<DEL::Element*>> object_instantiation;
 %type<std::vector<DEL::Element*>> block;
 %type<std::vector<DEL::Element*>> loop_block;
 %type<std::vector<DEL::Element*>> named_loop_block;
-%type<std::vector<DEL::Element*>> object_block;
-
-%type<std::vector<DEL::Element*>> unit_space_multiple_stmts;
-%type<std::vector<DEL::Element*>> unit_block;
 
 %type<Parameter*> single_func_param;
 %type<std::vector<DEL::Parameter*>> function_params;
@@ -113,7 +98,7 @@
 
 %token LEFT_PAREN LEFT_BRACKET ASSIGN VAR LET
 
-%token DOT COMMA COL ARROW RETURN PUB PRIV REF
+%token DOT COMMA COL ARROW RETURN REF
 
 %token INT DOUBLE STRING NIL
 
@@ -125,8 +110,6 @@
 %token WHILE CONT FOR LOOP BREAK;
 
 %token TYPE VALUE INDEX DEST 
-%token DYN_CREATE DYN_EXPAND DYN_INSERT DYN_APPEND DYN_CLEAR 
-%token DYN_DELETE DYN_GET DYN_SIZE DYN_FRONT DYN_BACK
 
 %token <std::string> INT_LITERAL
 %token <std::string> HEX_LITERAL
@@ -139,7 +122,6 @@
 %token <int>         RIGHT_PAREN    // These tokens encode line numbers
 %token <int>         SEMI           // These tokens encode line numbers
 %token <int>         FUNC           // These tokens encode line numbers
-%token <int>         OBJECT         // These tokens encode line numbers
 %token <int>         ELSE           // These tokens encode line numbers
 %token <int>         KEY            // These tokens encode line numbers
 %token <int>         UNIT           // These tokens encode line numbers
@@ -156,8 +138,8 @@ start
    ; 
 
 input
-   : unit_space            { driver.build($1); }
-   | input unit_space      { driver.build($2); }
+   : function_stmt            { driver.build($1); }
+   | input function_stmt      { driver.build($2); }
    ;
 
 identifiers
@@ -227,7 +209,6 @@ assignable_type
 
 returnable_type
    : assignable_type          { $$ = $1; }
-   | OBJECT LT identifiers GT { $$ = new EncodedDataType(DEL::DataType::USER_DEFINED, $3); }
    | NIL                      { $$ = new EncodedDataType(DEL::DataType::NIL,    "nil"   ); }
    ;
 
@@ -269,7 +250,6 @@ assignment
                   $3),  /* Expression AST    */
             $4); /* Line Number */
       }
-   | object_assignment { $$ = $1; }
    ;
 
 return_stmt
@@ -283,7 +263,6 @@ stmt
    | return_stmt          { $$ = $1; }
    | loop_stmt            { $$ = $1; }
    | direct_function_call { $$ = $1; }
-   | dyn_stmt             { $$ = $1; }
    ;
 
 multiple_statements
@@ -291,36 +270,9 @@ multiple_statements
    | multiple_statements stmt { $1.push_back($2); $$ = $1; }
    ;
 
-multiple_assignments
-   : assignment                      { $$ = std::vector<DEL::Element*>(); $$.push_back($1); }
-   | multiple_assignments assignment { $1.push_back($2); $$ = $1; }
-   ;
-
 block 
    : LEFT_BRACKET multiple_statements RIGHT_BRACKET { $$ = $2; }
    | LEFT_BRACKET RIGHT_BRACKET                     { $$ = std::vector<DEL::Element*>(); }
-   ;
-
-// 
-// ------------------------------ Unit Block ----------------------------
-// 
-
-unit_space_multiple_stmts
-   : function_stmt                   { $$ = std::vector<DEL::Element*>(); $$.push_back($1); }
-   | unit_space_multiple_stmts function_stmt { $1.push_back($2); $$ = $1; }
-   | object_definition                { $$ = std::vector<DEL::Element*>(); $$.push_back($1); }
-   | unit_space_multiple_stmts object_definition { $1.push_back($2); $$ = $1; }
-   | unit_space                           { $$ = std::vector<DEL::Element*>(); $$.push_back($1); }
-   | unit_space_multiple_stmts unit_space { $1.push_back($2); $$ = $1; }
-   ;
-
-unit_block
-   : LEFT_BRACKET unit_space_multiple_stmts RIGHT_BRACKET { $$ = $2; }
-   | LEFT_BRACKET RIGHT_BRACKET                     { $$ = std::vector<DEL::Element*>(); }
-   ;
-
-unit_space
-   : UNIT identifiers unit_block { $$ = new DEL::UnitSpace($2, $3, $1); }
    ;
 
 // 
@@ -331,17 +283,9 @@ single_func_param
    : INT    COL identifiers { $$ = new Parameter(DEL::DataType::INT,    $3, "int"   , false); }
    | DOUBLE COL identifiers { $$ = new Parameter(DEL::DataType::DOUBLE, $3, "double", false); }
    | STRING COL identifiers { $$ = new Parameter(DEL::DataType::STRING, $3, "string", false); }
-   | OBJECT LT identifiers GT COL identifiers
-      {
-         $$ = new Parameter(DEL::DataType::USER_DEFINED, $6, $3, false);
-      }
    | REF INT    COL identifiers { $$ = new Parameter(DEL::DataType::INT,    $4, "int"   , true); }
    | REF DOUBLE COL identifiers { $$ = new Parameter(DEL::DataType::DOUBLE, $4, "double", true); }
    | REF STRING COL identifiers { $$ = new Parameter(DEL::DataType::STRING, $4, "string", true); }
-   | REF OBJECT LT identifiers GT COL identifiers
-      {
-         $$ = new Parameter(DEL::DataType::USER_DEFINED, $7, $4, true);
-      }
    ;
 
 function_params
@@ -465,135 +409,6 @@ loop_stmt
       {
          $$ = new DEL::NamedLoop($3, $4, $2);
       }
-   ;
-
-// 
-// ------------------ Object Definition Specific Stuff ------------------
-// 
-
-object_instantiation
-   : LEFT_BRACKET multiple_assignments RIGHT_BRACKET { $$ = $2; }
-   | LEFT_BRACKET RIGHT_BRACKET { $$ = std::vector<DEL::Element*>();  }
-   ;
-
-object_assignment
-   : VAR identifiers COL OBJECT LT identifiers GT ASSIGN object_instantiation SEMI 
-      {
-         $$ = new DEL::ObjectAssignment(
-                                    false, 
-                                    $2, 
-                                    new EncodedDataType(DEL::DataType::USER_DEFINED, $6),
-                                    $9,
-                                    $10);
-      }
-   | LET identifiers COL OBJECT LT identifiers GT ASSIGN object_instantiation SEMI 
-      {
-         $$ = new DEL::ObjectAssignment(
-                                    true, 
-                                    $2, 
-                                    new EncodedDataType(DEL::DataType::USER_DEFINED, $6),
-                                    $9,
-                                    $10);
-      }
-   | identifiers ASSIGN object_instantiation SEMI 
-      {
-         $$ = new ObjectReassignment($1, $3, $4);
-      }
-   ;
-
-member_definition
-   : assignable_type COL identifiers SEMI          { $$ = new ObjectMember($1, $3, $4); }
-   | OBJECT LT identifiers GT COL identifiers SEMI 
-     { 
-        $$ = new ObjectMember(new DEL::EncodedDataType(DEL::DataType::USER_DEFINED, $3),
-                              $6,
-                              $7);
-     }
-   ;
-
-object_stmt
-   : member_definition { $$ = $1; }
-   | function_stmt     { $$ = $1; }
-   | dyn_stmt             { $$ = $1; }
-   ;
-
-multiple_object_stmts
-   : object_stmt                       { $$ = std::vector<DEL::Element*>(); $$.push_back($1); }
-   | multiple_object_stmts object_stmt { $1.push_back($2); $$ = $1; }
-   ;
-
-object_block
-   : LEFT_BRACKET multiple_object_stmts RIGHT_BRACKET { $$ = $2; }
-   | LEFT_BRACKET RIGHT_BRACKET                       { $$ = std::vector<DEL::Element*>(); }
-   ;
-
-object_definition
-   : OBJECT identifiers LEFT_BRACKET PUB  object_block PRIV object_block RIGHT_BRACKET 
-         {
-            $$ = new Object($2, $5, $7, $1);
-         }
-   | OBJECT identifiers LEFT_BRACKET PRIV object_block PUB  object_block RIGHT_BRACKET 
-         {
-            $$ = new Object($2, $7, $5, $1);
-         }
-   | OBJECT identifiers LEFT_BRACKET PUB object_block RIGHT_BRACKET 
-         {
-            $$ = new Object($2, $5, std::vector<DEL::Element*>(), $1);
-         }
-   ;
-
-// 
-// --------------------------- Dyn Statements ---------------------------
-// 
-
-dyn_stmt
-   : DYN_CREATE LEFT_PAREN identifiers COMMA TYPE assignable_type RIGHT_PAREN SEMI
-      {
-         $$ = new DEL::DynCreate($3, $6, $8);
-      }
-   | DYN_CREATE LEFT_PAREN identifiers COMMA TYPE OBJECT LT identifiers GT RIGHT_PAREN SEMI
-      {
-         $$ = new DEL::DynCreate($3, 
-                                 new EncodedDataType(DEL::DataType::USER_DEFINED, $8),
-                                 $11);
-      }
-   | DYN_EXPAND LEFT_PAREN REF identifiers COMMA VALUE INT_LITERAL RIGHT_PAREN SEMI
-     {
-        $$ = new DEL::DynExpand($4, $7, $9);
-     }
-
-   | DYN_INSERT LEFT_PAREN REF identifiers COMMA INDEX INT_LITERAL COMMA VALUE expression RIGHT_PAREN SEMI
-     {
-        $$ = new DEL::DynInsert($4, $7, $10, $12);
-     }
-   | DYN_APPEND LEFT_PAREN REF identifiers COMMA VALUE expression RIGHT_PAREN SEMI
-     {
-        $$ = new DEL::DynAppend($4, $7, $9);
-     }
-   | DYN_CLEAR LEFT_PAREN REF identifiers RIGHT_PAREN SEMI
-     {
-        $$ = new DEL::DynClear($4, $6);
-     }
-   | DYN_DELETE LEFT_PAREN REF identifiers COMMA INDEX INT_LITERAL RIGHT_PAREN SEMI
-     {
-        $$ = new DEL::DynDelete($4, $7, $9);
-     }
-   | DYN_GET LEFT_PAREN REF identifiers COMMA INDEX INT_LITERAL COMMA DEST REF identifiers RIGHT_PAREN SEMI
-     {
-        $$ = new DEL::DynGet($4, $7, $11, $13);
-     }
-   | DYN_SIZE LEFT_PAREN REF identifiers COMMA DEST REF identifiers RIGHT_PAREN SEMI
-     {
-        $$ = new DEL::DynSize($4, $8, $10);
-     }
-   | DYN_FRONT LEFT_PAREN REF identifiers COMMA DEST REF identifiers RIGHT_PAREN SEMI
-     {
-        $$ = new DEL::DynFront($4, $8, $10);
-     }
-   | DYN_BACK LEFT_PAREN REF identifiers COMMA DEST REF identifiers RIGHT_PAREN SEMI
-     {
-        $$ = new DEL::DynBack($4, $8, $10);
-     }
    ;
 
 %%

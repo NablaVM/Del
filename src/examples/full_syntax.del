@@ -1,0 +1,76 @@
+
+
+    func main() -> nil {
+
+        let an_int : int = 4; 
+        let a_double : double = 3.14;
+        let a_str : string = "This is a string " + " with some concatenation on construction"; 
+
+        var mutable_int : int = 4; 
+        var mutable_double : double = 3.14;
+        var mutable_str : string = "This is a string";
+
+        as_refs(&mutable_oject, &mutable_int, 3.14159);
+
+        return;
+    }
+
+    func a() -> int {
+        return 0;
+    }
+
+    func b() -> double {
+        return 0.0;
+    }
+
+    func c() -> string {
+        return "A string";
+    }
+
+    func control() -> nil {
+
+        var first  : int = 0; 
+        var second : int = 1; 
+
+        if(first) {
+
+        } elif (second) {
+
+            var moot : int = 33; 
+
+        } elif (0) {
+
+        } else {
+
+        }
+
+        return;
+    }
+
+    func loops() -> nil {
+
+
+        while(1) {
+
+            var some_var : double = 1.0; 
+            cont;
+        }
+
+        loop ' my_loop {
+            cont;
+            break my_loop;
+        }
+
+        for(var x : int = 4; x < 10; x = x + 1; ) {
+            
+            if(x) {}
+            cont;
+        }
+
+        return;
+    }
+
+    func wparams(int: x, string: z) -> nil  {
+
+        return;
+    }
