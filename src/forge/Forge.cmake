@@ -6,6 +6,7 @@ set(FORGE_INCLUDE_DIRS
 )
 
 set(FORGE_HEADERS
+    ${FORGE_DIR}/Aggregator.hpp
     ${FORGE_DIR}/Forge.hpp
     ${FORGE_DIR}/ForgeFwd.hpp
     ${FORGE_DIR}/ForgeSignal.hpp
@@ -22,6 +23,9 @@ set(FORGE_HEADERS
     ${FORGE_DIR}/instructions/Ressignment.hpp
     ${FORGE_DIR}/instructions/Instruction.hpp
 
+    ${FORGE_DIR}/managers/Memory.hpp
+    ${FORGE_DIR}/managers/SymbolTable.hpp
+
     ${FORGE_DIR}/reporting/Report.hpp
     ${FORGE_DIR}/reporting/Reporter.hpp
     ${FORGE_DIR}/reporting/ReportTypes.hpp
@@ -36,6 +40,9 @@ set(FORGE_SOURCES
     ${FORGE_DIR}/constructs/Function.cpp
     ${FORGE_DIR}/instructions/Assignment.cpp
     ${FORGE_DIR}/instructions/Reassignment.cpp
+
+    ${FORGE_DIR}/managers/Memory.cpp
+    ${FORGE_DIR}/managers/SymbolTable.cpp
 
     ${FORGE_DIR}/reporting/Reporter.cpp
     ${FORGE_DIR}/reporting/CustomReport.cpp

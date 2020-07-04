@@ -4,6 +4,8 @@
 #include "Ast.hpp"
 #include "Types/Variables.hpp"
 
+#include "forge/constructs/Variable.hpp"
+
 #include <vector>
 
 namespace DEL
@@ -39,14 +41,14 @@ namespace DEL
     class Function : public Element
     {
     public:
-        Function(std::string name, std::vector<Parameter*> params, ElementList elements, EncodedDataType * return_type, int line_number) : 
+        Function(std::string name, std::vector<FORGE::Variable*> params, ElementList elements, EncodedDataType * return_type, int line_number) : 
             Element(line_number), params(params), name(name), elements(elements), return_type(return_type) {}
 
         ~Function() { if(return_type){ delete return_type; } }
 
         virtual void visit(Visitor &visit) override;
 
-        std::vector<Parameter*> params;
+        std::vector<FORGE::Variable*> params;
         std::string name;
         ElementList elements;
         EncodedDataType * return_type;
@@ -58,7 +60,7 @@ namespace DEL
     class Call : public Element, public Ast
     {
     public:
-        Call(std::string function_name, std::vector<Parameter*> params, int line_number) : 
+        Call(std::string function_name, std::vector<FORGE::Variable*> params, int line_number) : 
             Element(line_number), 
             Ast(NodeType::CALL, nullptr, nullptr),
             function_name(function_name), params(params){}
@@ -66,7 +68,7 @@ namespace DEL
         virtual void visit(Visitor &visit) override;
 
         std::string function_name;
-        std::vector<Parameter*> params;
+        std::vector<FORGE::Variable*> params;
     };
 
     //! \brief Return statement

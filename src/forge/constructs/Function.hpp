@@ -2,6 +2,7 @@
 #define FORGE_FUNCTION_HPP
 
 #include "Generator.hpp"
+#include "Aggregator.hpp"
 
 #include "datatypes/DataType.hpp"
 #include "constructs/Variable.hpp"
@@ -11,21 +12,29 @@
 
 namespace FORGE
 {
-    class Function : public Generator
+    //! \brief A function object
+    //!        This object is a generator and an aggregator as it generates code and contains instructions
+    class Function : public Generator, public Aggregator
     {
     public:
+
+        //! \brief Create the function
+        //! \param name The name of the function
+        //! \param return_type The return type of the function
         Function(std::string name, DataType return_type) : name(name), return_type(return_type){}
-        Function(std::string name, DataType return_type, std::vector<Variable*> parameters, std::vector<InstructionIf*> instructions) : 
-            name(name), return_type(return_type), parameters(parameters), instructions(instructions){}
+
+        //! \brief Create the function
+        //! \param name The name of the function
+        //! \param return_type The return type of the function
+        //! \param parameters The variables to be passed in to the function
+        Function(std::string name, DataType return_type, std::vector<Variable*> parameters) : 
+            name(name), return_type(return_type), parameters(parameters){}
             
         std::string name;
         DataType return_type;
         std::vector<Variable*> parameters;
-        std::vector<InstructionIf*> instructions;
 
-        void add_instruction(InstructionIf * ins);
-
-        virtual std::vector<std::string> generate_NASM() override;
+        virtual std::vector<std::string> generate_NASM(SymbolTable & symbol_table) override;
     };
 }
 

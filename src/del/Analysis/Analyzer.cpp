@@ -8,6 +8,7 @@
 #include "forge/constructs/Variable.hpp"
 #include "forge/datatypes/DataType.hpp"
 #include "forge/instructions/Assignment.hpp"
+#include "forge/instructions/Reassignment.hpp"
 #include "forge/instructions/Instruction.hpp"
 
 
@@ -15,7 +16,6 @@
 
 namespace DEL
 {
-
     //
     // ===============---------------------------- Analyzer Methods ---------------------------===============
     //
@@ -62,30 +62,108 @@ namespace DEL
 
     void Analyzer::accept(Function & stmt) 
     {
-
         // Ensure function name doesn't exist
 
-
-        FORGE::DataType return_type = FORGE::DataType::STANDARD_INTEGER;
-
-        switch(stmt.return_type->dataType)
+        if(driver.symbol_table.does_context_exist(stmt.name))
         {
-            case DataType::DOUBLE:  return_type = FORGE::DataType::STANDARD_DOUBLE;  break;
-            case DataType::NIL:     return_type = FORGE::DataType::NIL;              break;
-            case DataType::INT:     return_type = FORGE::DataType::STANDARD_INTEGER; break;
-            case DataType::STRING:  return_type = FORGE::DataType::STANDARD_STRING;  break;
-            default:
-                report_incomplete("Default hit in accept(function) which means something isnt implemented");
-                break;
+            driver.code_forge.get_reporter().issue_report(
+                new FORGE::SemanticReport(
+                    FORGE::Report::Level::ERROR,
+                    driver.current_file_from_directive,
+                    driver.preprocessor.fetch_user_line_number(stmt.line_number), 
+                    27, 
+                    "Duplicate context name (" + stmt.name + ") detected", 
+                    {"Rename function to be unique"}
+                )
+            );
         }
 
-        current_forge_function = new FORGE::Function(stmt.name , return_type);
+        driver.symbol_table.new_context(stmt.name);
+
+        if(stmt.name == "main")
+        {
+            program_watcher.has_main = true;
+        }
+
+        // Ensure parameters aren't too many in number
+        if(stmt.params.size() > FORGE::SETTINGS::GS_FUNC_PARAM_RESERVE)
+        {
+            driver.code_forge.get_reporter().issue_report(
+                new FORGE::SemanticReport(
+                    FORGE::Report::Level::ERROR,
+                    driver.current_file_from_directive,
+                    driver.preprocessor.fetch_user_line_number(stmt.line_number),
+                    -1, 
+                    driver.preprocessor.fetch_line(stmt.line_number),
+                    {
+                        "Function parameters exceed number permitted by system (" + std::to_string(FORGE::SETTINGS::GS_FUNC_PARAM_RESERVE) + ")",
+                        "Reduce the number of parameters for the given function"
+                    }
+                )
+            );
+        }
+
+        // Make a copy of the parameters
+        std::vector<FORGE::Variable> params;
+        for(auto & p : stmt.params)
+        {
+            params.push_back(*p);
+        }
+
+        // Add the parameters
+        driver.symbol_table.add_parameters_to_current_context(params);
+
+        // Add the return type
+        driver.symbol_table.add_return_type_to_current_context(stmt.return_type->dataType);
+
+        function_watcher.has_return = false;
+
+        FORGE::Function * current_forge_function = new FORGE::Function(stmt.name , stmt.return_type->dataType);
+        current_forge_aggregator = current_forge_function;
         current_front_function = &stmt;
 
         for(auto & el : stmt.elements)
         {
             el->visit(*this);
+            delete el;
         }
+
+        // Clear the symbol table for the given function so elements cant be accessed externally
+        // We dont delete the context though, that way can confirm existence later
+        driver.symbol_table.clear_existing_context(stmt.name);
+
+        // Check that the function has been explicitly returned at the end of the function
+        if(!function_watcher.has_return)
+        {
+            driver.code_forge.get_reporter().issue_report(
+                new FORGE::SemanticReport(
+                    FORGE::Report::Level::ERROR,
+                    driver.current_file_from_directive,
+                    driver.preprocessor.fetch_user_line_number(stmt.line_number),
+                    -1, 
+                    driver.preprocessor.fetch_line(stmt.line_number),
+                    {
+                        "Given function does not have a matching return. All functions must be explicitly returned"
+                    }
+                )
+            );
+        }
+
+        // Add function to forge for later generation
+        driver.code_forge.add_ready_function(current_forge_function);
+
+        // Reset pointers
+        current_forge_aggregator = nullptr;
+        current_front_function = nullptr;
+
+        // Reset memory manager for alloc variables in new functions
+        driver.code_forge.reset_memory();
+
+        // Clean params
+        //for(auto & p : stmt.params)
+        //{
+        //    delete p;
+        //}
     }
 
     // -----------------------------------------------------
@@ -104,7 +182,29 @@ namespace DEL
 
     void Analyzer::accept(Return & stmt) 
     {
-        report_incomplete("Return");
+        // If we are in the function context then we can say we have an explicit return
+        std::string context_name = driver.symbol_table.get_current_context_name();
+
+        if(context_name == current_front_function->name)
+        {
+            function_watcher.has_return = true;
+        }
+    
+        bool has_return = (stmt.ast != nullptr);
+
+        // If there is something to return, we need to construct the return
+        if(has_return)
+        {
+        // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    ISSUE AN EXPR RETURN
+
+
+            report_incomplete("This return indicates that there is something to return; this has not yet been implemented");
+        }
+        else
+        {
+
+        // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    ISSUE A BLANK RETURN
+        }
     }
 
     // -----------------------------------------------------
@@ -113,29 +213,35 @@ namespace DEL
 
     void Analyzer::accept(Assignment & stmt) 
     {
+        if(driver.symbol_table.does_symbol_exist(stmt.ast->left->node.data))
+        {
+            driver.code_forge.get_reporter().issue_report(
+                new FORGE::SemanticReport(
+                    FORGE::Report::Level::ERROR,
+                    driver.current_file_from_directive,
+                    driver.preprocessor.fetch_user_line_number(stmt.line_number),
+                    -1, 
+                    driver.preprocessor.fetch_line(stmt.line_number),
+                    {
+                        "Symbol \"" + stmt.ast->left->node.data  + "\" used in assignment is not unique"
+                    }
+                )
+            );
+        }
+
         forge_expression_items.clear();
 
         // Build the expression items vector
         validate_and_build_assignment(stmt.ast->left->node.data, stmt.ast->right, stmt.type_info->dataType, stmt.line_number);
 
-        FORGE::DataType data_type = FORGE::DataType::STANDARD_INTEGER;
-        switch(stmt.type_info->dataType )
-        {
-            case DataType::DOUBLE:  data_type = FORGE::DataType::STANDARD_DOUBLE;  break;
-            case DataType::NIL:     data_type = FORGE::DataType::NIL;              break;
-            case DataType::INT:     data_type = FORGE::DataType::STANDARD_INTEGER; break;
-            case DataType::STRING:  data_type = FORGE::DataType::STANDARD_STRING;  break;
-            default:
-                report_incomplete("Default hit in accept(function) which means something isnt implemented");
-                break;
-        }
-
         FORGE::Assignment * assignment = new FORGE::Assignment(
-            new FORGE::Variable(stmt.ast->left->node.data, data_type),
-            new FORGE::Expression(data_type, forge_expression_items)
+            new FORGE::Variable(stmt.ast->left->node.data, stmt.type_info->dataType),
+            new FORGE::Expression(stmt.type_info->dataType, forge_expression_items)
         );
 
-        current_forge_function->add_instruction(assignment);
+        current_forge_aggregator->add_instruction(assignment);
+
+        driver.symbol_table.add_symbol(stmt.ast->left->node.data, stmt.type_info->dataType, stmt.is_immutable);
     }
 
     // -----------------------------------------------------
@@ -144,7 +250,40 @@ namespace DEL
 
     void Analyzer::accept(Reassignment & stmt) 
     {
-        report_incomplete("Reassignment");
+        // Ensure the symbol to be reassigned has already been defined
+        if(!driver.symbol_table.does_symbol_exist(stmt.ast->left->node.data))
+        {
+            driver.code_forge.get_reporter().issue_report(
+                new FORGE::SemanticReport(
+                    FORGE::Report::Level::ERROR,
+                    driver.current_file_from_directive,
+                    driver.preprocessor.fetch_user_line_number(stmt.line_number),
+                    -1, 
+                    driver.preprocessor.fetch_line(stmt.line_number),
+                    {
+                        "Symbol \"" + stmt.ast->left->node.data  + "\" for reassignment has not yet been defined"
+                    }
+                )
+            );
+        }
+
+        // Get the symbol type
+        FORGE::DataType lhs_type = driver.symbol_table.get_value_type(stmt.ast->left->node.data);
+
+        // Clear the temp vector for expression building
+        forge_expression_items.clear();
+
+        // Build the expression items vector
+        validate_and_build_assignment(stmt.ast->left->node.data, stmt.ast->right, lhs_type, stmt.line_number);
+
+        // Build reassignment 
+        FORGE::Reassignment * reassign = new FORGE::Reassignment(
+            new FORGE::Variable(stmt.ast->left->node.data, lhs_type),
+            new FORGE::Expression(lhs_type, forge_expression_items)
+        );
+
+        // Add reassignment instruction to forge
+        current_forge_aggregator->add_instruction(reassign);
     }
 
     // -----------------------------------------------------
@@ -264,7 +403,7 @@ namespace DEL
     //
     
 
-    void Analyzer::validate_and_build_assignment(std::string var_name, Ast * ast, DataType type, int line_number)
+    void Analyzer::validate_and_build_assignment(std::string var_name, Ast * ast, FORGE::DataType type, int line_number)
     {
         switch(ast->node.node_type)
         {
@@ -273,13 +412,44 @@ namespace DEL
             //
             case Ast::NodeType::IDENTIFIER:  
             {
-/*
-    >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.
 
-                Validate Identifier 
+                // Ensure the symbol to be reassigned has already been defined
+                if(!driver.symbol_table.does_symbol_exist(ast->node.data))
+                {
+                    driver.code_forge.get_reporter().issue_report(
+                        new FORGE::SemanticReport(
+                            FORGE::Report::Level::ERROR,
+                            driver.current_file_from_directive,
+                            driver.preprocessor.fetch_user_line_number(line_number),
+                            -1, 
+                            driver.preprocessor.fetch_line(line_number),
+                            {
+                                "Symbol \"" + ast->node.data  + "\" used in expression does not exist"
+                            }
+                        )
+                    );
+                }
 
-    >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.
-*/
+                // Ensure variable's type is compliant
+                if(driver.symbol_table.get_value_type(ast->node.data) != type)
+                {
+                    driver.code_forge.get_reporter().issue_report(
+                        new FORGE::SemanticReport(
+                            FORGE::Report::Level::ERROR,
+                            driver.current_file_from_directive,
+                            driver.preprocessor.fetch_user_line_number(line_number),
+                            -1, 
+                            driver.preprocessor.fetch_line(line_number),
+                            {
+                                "Type of \"" + ast->node.data + "\" is \"" + FORGE::DataType_to_string(ast->node.data_type) + 
+                                "\", which is incompatible with type of \"" + var_name + 
+                                "\" which is type \"" + FORGE::DataType_to_string(type) + "\"\n"
+                            }
+                        )
+                    );
+                }
+
+                // Indicate that value is a variable and hand the data
                 forge_expression_items.push_back({FORGE::Expression::Instruction::VARIABLE, ast->node.data});
                 return;
             }
@@ -288,13 +458,27 @@ namespace DEL
             //
             case Ast::NodeType::VALUE:  
             {
-/*
-    >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.
+                // Ensure that the types align. int-int | double-double  | string-string
+                // That way we know how to handle things in the rear end
+                if(ast->node.data_type != type)
+                {
+                    driver.code_forge.get_reporter().issue_report(
+                        new FORGE::SemanticReport(
+                            FORGE::Report::Level::ERROR,
+                            driver.current_file_from_directive,
+                            driver.preprocessor.fetch_user_line_number(line_number),
+                            -1, 
+                            driver.preprocessor.fetch_line(line_number),
+                            {
+                                "Type of \"" + ast->node.data + "\" is \"" + FORGE::DataType_to_string(ast->node.data_type) + 
+                                "\", which is incompatible with type of \"" + var_name + 
+                                "\" which is type \"" + FORGE::DataType_to_string(type) + "\"\n"
+                            }
+                        )
+                    );
+                }
 
-                Validate Value 
-
-    >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.
-*/
+                // Indicate in the expression that we have a value, and store the data
                 forge_expression_items.push_back({FORGE::Expression::Instruction::VALUE, ast->node.data});
                 return;
             }
@@ -310,6 +494,8 @@ namespace DEL
 
     >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.
 */
+                report_incomplete("CALL - IN EXPRESSION");
+
 
                 forge_expression_items.push_back({FORGE::Expression::Instruction::CALL, ast->node.data});
                 return;

@@ -10,10 +10,12 @@
 
 namespace FORGE
 {
+    //! \brief An expression
     class Expression
     {
     public:
 
+        //! \brief An instruction within the expression
         enum class Instruction
         {
             ADD   ,
@@ -42,13 +44,16 @@ namespace FORGE
             CALL        // Call something and use returned item
         };
 
+        //! \brief Pair an instruction with data if required
         struct ExpressionItem
         {
             Instruction instruction;
             std::string value;       // Depending on the instruction this could be blank, a variable name, a raw value, or a function name for a call
         };
 
-        Expression(DataType type) : type(type) {}
+        //! \brief Create an expression
+        //! \param expression The expression instructions for the expression 
+        //! \note  Generators require that the expression be in post-fix notation for correct execution to take place
         Expression(DataType type, std::vector<ExpressionItem> expression) : type(type), expression(expression){ }
 
         DataType type;

@@ -1,5 +1,7 @@
 func main() -> nil {
 
+    let a : int = 55;
+
     let an_int : int = 4 + 4 * a; 
 
     return;

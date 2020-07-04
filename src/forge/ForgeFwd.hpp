@@ -3,11 +3,14 @@
 
 namespace FORGE
 {
-    //class SymbolTable;
+    class Forge;
+    class Function;
+    class Assignment;
+    class Reassignment;
+    class SymbolTable;
     class Reporter;
     class ForgeSignal;
-    //class Memory;
-    //class Builder;
+    class Memory;
 }
 
 #endif

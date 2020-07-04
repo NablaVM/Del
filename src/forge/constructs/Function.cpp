@@ -2,7 +2,7 @@
 
 namespace FORGE
 {
-    std::vector<std::string> Function::generate_NASM()
+    std::vector<std::string> Function::generate_NASM(SymbolTable & symbol_table)
     {
         std::vector<std::string> result;
 
@@ -13,7 +13,7 @@ namespace FORGE
 
         for(auto & ins : instructions)
         {
-            std::vector<std::string> code = ins->generate_NASM();
+            std::vector<std::string> code = ins->generate_NASM(symbol_table);
             result.insert(result.end(), code.begin(), code.end());
         }
 
@@ -21,10 +21,5 @@ namespace FORGE
         result.push_back("\n>\n");
 
         return {};
-    }
-
-    void Function::add_instruction(InstructionIf * ins)
-    {
-        instructions.push_back(ins);
     }
 }

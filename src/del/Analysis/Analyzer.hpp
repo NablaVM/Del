@@ -50,14 +50,14 @@ namespace DEL
         };
         FunctionRequirements function_watcher;
 
-        FORGE::Function * current_forge_function;
+        FORGE::Aggregator * current_forge_aggregator;
         Function *        current_front_function;
 
         std::vector<FORGE::Expression::ExpressionItem> forge_expression_items;
 
         void report_incomplete(std::string what);
 
-        void validate_and_build_assignment(std::string var_name, Ast * ast, DataType type, int line_number);
+        void validate_and_build_assignment(std::string var_name, Ast * ast, FORGE::DataType type, int line_number);
     };
 }
 

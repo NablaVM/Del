@@ -8,7 +8,8 @@
 namespace DEL
 {
    DEL_Driver::DEL_Driver() : analyzer(*this), 
-                              preprocessor(code_forge)
+                              preprocessor(code_forge),
+                              symbol_table(code_forge)
    {
       
    }

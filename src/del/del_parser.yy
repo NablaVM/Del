@@ -19,8 +19,12 @@
       class Element;
       class Function;
       class EncodedDataType;
-      class Parameter;
       class Call;
+   }
+
+   namespace FORGE
+   {
+      class Variable;
    }
 
 # ifndef YY_NULLPTR
@@ -46,6 +50,7 @@
    #include "Ast/Ast.hpp"
    #include "Ast/Elements.hpp"
    #include "Types/Variables.hpp"
+   #include "forge/constructs/Variable.hpp"
 
    #include "del_driver.hpp"
 
@@ -88,11 +93,11 @@
 %type<std::vector<DEL::Element*>> loop_block;
 %type<std::vector<DEL::Element*>> named_loop_block;
 
-%type<Parameter*> single_func_param;
-%type<std::vector<DEL::Parameter*>> function_params;
+%type<FORGE::Variable*> single_func_param;
+%type<std::vector<FORGE::Variable*>> function_params;
 
-%type<Parameter*> single_call_param;
-%type<std::vector<DEL::Parameter*>> call_params;
+%type<FORGE::Variable*> single_call_param;
+%type<std::vector<FORGE::Variable*>> call_params;
 
 %type<std::string> identifiers;
 
@@ -148,11 +153,11 @@ identifiers
    ;
 
 string_expr
-   : STRING_LITERAL                 { $$ = new DEL::Ast(DEL::Ast::NodeType::VALUE, DEL::DataType::STRING, $1, nullptr, nullptr);  }
+   : STRING_LITERAL                 { $$ = new DEL::Ast(DEL::Ast::NodeType::VALUE, FORGE::DataType::STANDARD_STRING, $1, nullptr, nullptr);  }
    | string_expr ADD STRING_LITERAL { $$ = new DEL::Ast(DEL::Ast::NodeType::ADD, 
                                                         $1, 
                                                         new DEL::Ast(DEL::Ast::NodeType::VALUE, 
-                                                                     DEL::DataType::STRING, 
+                                                                     FORGE::DataType::STANDARD_STRING, 
                                                                      $3, 
                                                                      nullptr, 
                                                                      nullptr)
@@ -196,20 +201,20 @@ factor
    ;
 
 primary
-    : INT_LITERAL                { $$ = new DEL::Ast(DEL::Ast::NodeType::VALUE,      DEL::DataType::INT,       $1, nullptr, nullptr); }
-    | DOUB_LITERAL               { $$ = new DEL::Ast(DEL::Ast::NodeType::VALUE,      DEL::DataType::DOUBLE,    $1, nullptr, nullptr); }
-    | identifiers                { $$ = new DEL::Ast(DEL::Ast::NodeType::IDENTIFIER, DEL::DataType::ID_STRING, $1, nullptr, nullptr); }
+    : INT_LITERAL                { $$ = new DEL::Ast(DEL::Ast::NodeType::VALUE,      FORGE::DataType::STANDARD_INTEGER,   $1, nullptr, nullptr); }
+    | DOUB_LITERAL               { $$ = new DEL::Ast(DEL::Ast::NodeType::VALUE,      FORGE::DataType::STANDARD_DOUBLE,    $1, nullptr, nullptr); }
+    | identifiers                { $$ = new DEL::Ast(DEL::Ast::NodeType::IDENTIFIER, FORGE::DataType::UNKNOWN,            $1, nullptr, nullptr); }
     ;
     
 assignable_type
-   : INT    { $$ = new EncodedDataType(DEL::DataType::INT,    "int"   ); }
-   | DOUBLE { $$ = new EncodedDataType(DEL::DataType::DOUBLE, "double"); }
-   | STRING { $$ = new EncodedDataType(DEL::DataType::STRING, "string"); }
+   : INT    { $$ = new EncodedDataType(FORGE::DataType::STANDARD_INTEGER,    "int"   ); }
+   | DOUBLE { $$ = new EncodedDataType(FORGE::DataType::STANDARD_DOUBLE, "double"); }
+   | STRING { $$ = new EncodedDataType(FORGE::DataType::STANDARD_STRING, "string"); }
    ;
 
 returnable_type
    : assignable_type          { $$ = $1; }
-   | NIL                      { $$ = new EncodedDataType(DEL::DataType::NIL,    "nil"   ); }
+   | NIL                      { $$ = new EncodedDataType(FORGE::DataType::NIL,    "nil"   ); }
    ;
 
 assignment_allowed_expression
@@ -224,8 +229,8 @@ assignment
          // and the rhs is the expression
          $$ = new DEL::Assignment(
                false, /* Not immutable */
-               new DEL::Ast(DEL::Ast::NodeType::ROOT, DEL::DataType::NONE, "=", 
-                  new DEL::Ast(DEL::Ast::NodeType::IDENTIFIER, DEL::DataType::ID_STRING, $2, nullptr, nullptr), /* Var name */
+               new DEL::Ast(DEL::Ast::NodeType::ROOT, FORGE::DataType::UNDEFINED, "=", 
+                  new DEL::Ast(DEL::Ast::NodeType::IDENTIFIER, FORGE::DataType::UNKNOWN, $2, nullptr, nullptr), /* Var name */
                   $6),  /* Expression AST    */
                $4,      /* Encoded Data type */
             $7);        /* Line Number       */
@@ -236,8 +241,8 @@ assignment
          // and the rhs is the expression
          $$ = new DEL::Assignment(
                true, /* Is immutable */
-               new DEL::Ast(DEL::Ast::NodeType::ROOT, DEL::DataType::NONE, "=", 
-                  new DEL::Ast(DEL::Ast::NodeType::IDENTIFIER, DEL::DataType::ID_STRING, $2, nullptr, nullptr), /* Var name */
+               new DEL::Ast(DEL::Ast::NodeType::ROOT, FORGE::DataType::UNDEFINED, "=", 
+                  new DEL::Ast(DEL::Ast::NodeType::IDENTIFIER, FORGE::DataType::UNKNOWN, $2, nullptr, nullptr), /* Var name */
                   $6),  /* Expression AST    */
                $4,      /* Encoded Data type */
             $7);        /* Line Number       */
@@ -245,8 +250,8 @@ assignment
    | identifiers ASSIGN assignment_allowed_expression SEMI
       {
          $$ = new DEL::Reassignment(
-            new DEL::Ast(DEL::Ast::NodeType::ROOT, DEL::DataType::NONE, "=", 
-               new DEL::Ast(DEL::Ast::NodeType::IDENTIFIER, DEL::DataType::ID_STRING, $1, nullptr, nullptr), /* Var name */
+            new DEL::Ast(DEL::Ast::NodeType::ROOT, FORGE::DataType::UNDEFINED, "=", 
+               new DEL::Ast(DEL::Ast::NodeType::IDENTIFIER, FORGE::DataType::UNKNOWN, $1, nullptr, nullptr), /* Var name */
                   $3),  /* Expression AST    */
             $4); /* Line Number */
       }
@@ -280,21 +285,21 @@ block
 // 
 
 single_func_param
-   : INT    COL identifiers { $$ = new Parameter(DEL::DataType::INT,    $3, "int"   , false); }
-   | DOUBLE COL identifiers { $$ = new Parameter(DEL::DataType::DOUBLE, $3, "double", false); }
-   | STRING COL identifiers { $$ = new Parameter(DEL::DataType::STRING, $3, "string", false); }
-   | REF INT    COL identifiers { $$ = new Parameter(DEL::DataType::INT,    $4, "int"   , true); }
-   | REF DOUBLE COL identifiers { $$ = new Parameter(DEL::DataType::DOUBLE, $4, "double", true); }
-   | REF STRING COL identifiers { $$ = new Parameter(DEL::DataType::STRING, $4, "string", true); }
+   : INT    COL identifiers     { $$ = new FORGE::Variable($3, FORGE::DataType::STANDARD_INTEGER); }
+   | DOUBLE COL identifiers     { $$ = new FORGE::Variable($3, FORGE::DataType::STANDARD_DOUBLE); }
+   | STRING COL identifiers     { $$ = new FORGE::Variable($3, FORGE::DataType::STANDARD_STRING); }
+   | REF INT    COL identifiers { $$ = new FORGE::Variable($4, FORGE::DataType::REF_STANDARD_INTEGER); }
+   | REF DOUBLE COL identifiers { $$ = new FORGE::Variable($4, FORGE::DataType::REF_STANDARD_DOUBLE); }
+   | REF STRING COL identifiers { $$ = new FORGE::Variable($4, FORGE::DataType::REF_STANDARD_STRING); }
    ;
 
 function_params
-   : single_func_param { $$ = std::vector<DEL::Parameter*>(); $$.push_back($1); }
+   : single_func_param { $$ = std::vector<FORGE::Variable*>(); $$.push_back($1); }
    | function_params COMMA single_func_param { $1.push_back($3); $$ = $1; }
    ;
 
 function_stmt 
-   : FUNC identifiers LEFT_PAREN RIGHT_PAREN ARROW returnable_type block { $$ = new DEL::Function($2, std::vector<DEL::Parameter*>(), $7, $6, $1); }
+   : FUNC identifiers LEFT_PAREN RIGHT_PAREN ARROW returnable_type block { $$ = new DEL::Function($2, std::vector<FORGE::Variable*>(), $7, $6, $1); }
    | FUNC identifiers LEFT_PAREN function_params RIGHT_PAREN ARROW returnable_type block 
       { 
          $$ = new DEL::Function($2, $4, $8, $7, $1); 
@@ -306,27 +311,27 @@ function_stmt
 // 
 
 single_call_param
-   : identifiers     { $$ = new Parameter(DEL::DataType::ID_STRING, $1, "unknown"     , false); }
-   | REF identifiers { $$ = new Parameter(DEL::DataType::ID_STRING, $2, "unknown ref" , true);  }
-   | INT_LITERAL     { $$ = new Parameter(DEL::DataType::INT,       $1, "int literal" , false); }
-   | DOUB_LITERAL    { $$ = new Parameter(DEL::DataType::DOUBLE,    $1, "doub literal", false); }
-   | STRING_LITERAL  { $$ = new Parameter(DEL::DataType::STRING,    $1, "str literal" , false); }
+   : identifiers     { $$ = new FORGE::Variable($1, FORGE::DataType::UNKNOWN); }
+   | REF identifiers { $$ = new FORGE::Variable($2, FORGE::DataType::REF_UNKNOWN);  }
+   | INT_LITERAL     { $$ = new FORGE::Variable($1, FORGE::DataType::STANDARD_INTEGER); }
+   | DOUB_LITERAL    { $$ = new FORGE::Variable($1, FORGE::DataType::STANDARD_DOUBLE); }
+   | STRING_LITERAL  { $$ = new FORGE::Variable($1, FORGE::DataType::STANDARD_STRING); }
    ;
 
 call_params
-   : single_call_param { $$ = std::vector<DEL::Parameter*>(); $$.push_back($1); }
+   : single_call_param { $$ = std::vector<FORGE::Variable*>(); $$.push_back($1); }
    | call_params COMMA single_call_param { $1.push_back($3); $$ = $1; }
    ;
 
 // Returns call as an AST 
 expr_function_call
-   : identifiers LEFT_PAREN RIGHT_PAREN             { $$ = new DEL::Call($1, std::vector<DEL::Parameter*>(), $3 ); }
+   : identifiers LEFT_PAREN RIGHT_PAREN             { $$ = new DEL::Call($1, std::vector<FORGE::Variable*>(), $3 ); }
    | identifiers LEFT_PAREN call_params RIGHT_PAREN { $$ = new DEL::Call($1, $3, $4); }
    ;
 
 // Returns call as an Element
 direct_function_call
-   : identifiers LEFT_PAREN RIGHT_PAREN SEMI             { $$ = new DEL::Call($1, std::vector<DEL::Parameter*>(), $3 ); }
+   : identifiers LEFT_PAREN RIGHT_PAREN SEMI             { $$ = new DEL::Call($1, std::vector<FORGE::Variable*>(), $3 ); }
    | identifiers LEFT_PAREN call_params RIGHT_PAREN SEMI { $$ = new DEL::Call($1, $3, $4); }
    ;
 
@@ -348,7 +353,7 @@ elif_stmt
 
 else_stmt
    : ELSE block   { $$ = new DEL::If(If::Type::ELSE, 
-                                     new DEL::Ast(DEL::Ast::NodeType::VALUE, DEL::DataType::INT, "1", nullptr, nullptr),
+                                     new DEL::Ast(DEL::Ast::NodeType::VALUE, FORGE::DataType::STANDARD_INTEGER, "1", nullptr, nullptr),
                                      $2,
                                      nullptr,
                                      $1);
