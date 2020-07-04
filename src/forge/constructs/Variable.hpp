@@ -24,6 +24,13 @@ namespace FORGE
         //! \returns The variable's type
         DataType     getType() const { return type; }
 
+        //! \brief Set the type
+        //! \param t The new type to assign
+        void setType(DataType t) 
+        {
+            type = t;
+        }
+
     protected:
         std::string name;
         DataType type;

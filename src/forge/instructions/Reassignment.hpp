@@ -15,7 +15,7 @@ namespace FORGE
         //! \brief Create an assignment for a variable
         //! \param variable The variable information
         //! \param expression The expression and instructions to calculate for reassignment
-        Reassignment(Variable * variable, Expression * expression) : InstructionIf(InstructionType::ASSIGN),
+        Reassignment(Variable * variable, Expression * expression) : InstructionIf(InstructionType::REASSIGN),
                                                                        variable(variable), expression(expression) {}
 
         Variable * variable;

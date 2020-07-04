@@ -19,9 +19,11 @@ set(FORGE_HEADERS
 
     ${FORGE_DIR}/datatypes/DataType.hpp
 
-    ${FORGE_DIR}/instructions/Assignment.hpp
-    ${FORGE_DIR}/instructions/Ressignment.hpp
     ${FORGE_DIR}/instructions/Instruction.hpp
+    ${FORGE_DIR}/instructions/Assignment.hpp
+    ${FORGE_DIR}/instructions/Call.hpp
+    ${FORGE_DIR}/instructions/Ressignment.hpp
+    ${FORGE_DIR}/instructions/Return.hpp
 
     ${FORGE_DIR}/managers/Memory.hpp
     ${FORGE_DIR}/managers/SymbolTable.hpp
@@ -39,7 +41,9 @@ set(FORGE_SOURCES
     ${FORGE_DIR}/Forge.cpp
     ${FORGE_DIR}/constructs/Function.cpp
     ${FORGE_DIR}/instructions/Assignment.cpp
+    ${FORGE_DIR}/instructions/Call.cpp
     ${FORGE_DIR}/instructions/Reassignment.cpp
+    ${FORGE_DIR}/instructions/Return.cpp
 
     ${FORGE_DIR}/managers/Memory.cpp
     ${FORGE_DIR}/managers/SymbolTable.cpp

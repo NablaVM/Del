@@ -7,9 +7,12 @@
 
 #include "forge/constructs/Variable.hpp"
 #include "forge/datatypes/DataType.hpp"
-#include "forge/instructions/Assignment.hpp"
-#include "forge/instructions/Reassignment.hpp"
+
 #include "forge/instructions/Instruction.hpp"
+#include "forge/instructions/Assignment.hpp"
+#include "forge/instructions/Call.hpp"
+#include "forge/instructions/Reassignment.hpp"
+#include "forge/instructions/Return.hpp"
 
 
 #include <iostream>
@@ -172,8 +175,14 @@ namespace DEL
 
     void Analyzer::accept(Call & stmt) 
     {
-      
-       report_incomplete("Call");
+        // Validate the call, and change any UNKNOWN types presented by variables being passed to their 
+        // actual data type
+        validate_call(stmt);
+
+       // current_forge_aggregator->add_instruction(
+       //     new FORGE::Call(stmt.params)
+       // );
+
     }
 
     // -----------------------------------------------------
@@ -190,20 +199,28 @@ namespace DEL
             function_watcher.has_return = true;
         }
     
+        // Check if the return has an expression associated with it
         bool has_return = (stmt.ast != nullptr);
 
         // If there is something to return, we need to construct the return
         if(has_return)
         {
-        // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    ISSUE AN EXPR RETURN
+            forge_expression_items.clear();
 
+            // Build the expression items vector for the return, expect the type to be that declared by the function
+            validate_and_build_assignment("Return Expression", stmt.ast->right, current_front_function->return_type->dataType, stmt.line_number);
 
-            report_incomplete("This return indicates that there is something to return; this has not yet been implemented");
+            // Create the return and give to aggregator
+            current_forge_aggregator->add_instruction(
+                new FORGE::Return(
+                    new FORGE::Expression(current_front_function->return_type->dataType, forge_expression_items)
+                    )
+                );
         }
         else
         {
-
-        // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    ISSUE A BLANK RETURN
+            // Create the return and give to aggregator
+            current_forge_aggregator->add_instruction(new FORGE::Return(nullptr));
         }
     }
 
@@ -401,7 +418,224 @@ namespace DEL
     //
     // ===============---------------------------- Analysis Methods ---------------------------===============
     //
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    void Analyzer::ensure_id_in_current_context(std::string id, int line_no, std::vector<FORGE::DataType> allowed)
+    {
+        // Check symbol table to see if an id exists, don't display information yet
+        if(!driver.symbol_table.does_symbol_exist(id, false))
+        {
+            // Reports the error and true marks the program for death
+            driver.code_forge.get_reporter().issue_report(
+                new FORGE::SemanticReport(
+                    FORGE::Report::Level::ERROR,
+                    driver.current_file_from_directive,
+                    driver.preprocessor.fetch_user_line_number(line_no),
+                    -1, 
+                    driver.preprocessor.fetch_line(line_no),
+                    {
+                        "Unknown identifier \"" + id + "\"" 
+                    }
+                )
+            );
+        }
+
+        // If allowed is empty, we just wanted to make sure the thing existed
+        if(allowed.size() == 0)
+        {
+            return;
+        }
+
+        // Ensure type is one of the allowed types
+        bool is_allowed = false;
+        for(auto & v : allowed)
+        {
+            if(driver.symbol_table.is_existing_symbol_of_type(id, v))
+            {
+                is_allowed = true;
+            }
+        }
+
+        // If the type isn't allowed
+        if(!is_allowed)
+        {
+            // Reports the error and true marks the program for death
+            driver.code_forge.get_reporter().issue_report(
+                new FORGE::SemanticReport(
+                    FORGE::Report::Level::ERROR,
+                    driver.current_file_from_directive,
+                    driver.preprocessor.fetch_user_line_number(line_no),
+                    -1, 
+                    driver.preprocessor.fetch_line(line_no),
+                    {
+                        "Type of identifier \"" + id + "\" (" + 
+                            FORGE::DataType_to_string (driver.symbol_table.get_value_type(id)) + 
+                            ") not permitted in current operation", 
+                    }
+                )
+            );
+        }
+    }
+
+    // -----------------------------------------------------
+    //
+    // -----------------------------------------------------
+
+    void Analyzer::validate_call(Call & stmt)
+    {
+        // Disallow recursion until we come up with a way to handle it in the ASM
+        //
+        if(stmt.function_name == current_front_function->name)
+        {
+            driver.code_forge.get_reporter().issue_report(
+                new FORGE::InternalReport(
+                    {
+                        "DEL::Analyzer",
+                        "Analyzer.cpp",
+                        "validate_call",
+                        {
+                            "Recursion is not yet supported. A recursive call was detected on line : " + 
+                            std::to_string(stmt.line_number) + " of file : " + driver.current_file_from_directive
+                        }
+                    }
+                )
+            );
+        }
+
+        //  Check if the context exists
+        //
+        if(!driver.symbol_table.does_context_exist(stmt.function_name))
+        {
+            driver.code_forge.get_reporter().issue_report(
+                new FORGE::SemanticReport(
+                    FORGE::Report::Level::ERROR,
+                    driver.current_file_from_directive,
+                    driver.preprocessor.fetch_user_line_number(stmt.line_number),
+                    -1, 
+                    driver.preprocessor.fetch_line(stmt.line_number),
+                    {
+                        "Unknown function name given for call"
+                    }
+                )
+            );
+        }
+      
+        std::vector<FORGE::Variable> params = driver.symbol_table.get_context_parameters(stmt.function_name);
+
+        // Ensure that the parameters are the size we expect
+        if(params.size() != stmt.params.size())
+        {
+            driver.code_forge.get_reporter().issue_report(
+                new FORGE::SemanticReport(
+                    FORGE::Report::Level::ERROR,
+                    driver.current_file_from_directive,
+                    driver.preprocessor.fetch_user_line_number(stmt.line_number),
+                    -1, 
+                    driver.preprocessor.fetch_line(stmt.line_number),
+                    {
+                        "Mismatched number of parameters given for call to : " + stmt.function_name,
+                        "Expected " + std::to_string(params.size()) + ", but given " + std::to_string(stmt.params.size())
+                    }
+                )
+            );
+        }
+
+        //  Ensure all parameters exist, and if they do set the type (if needed)
+        //
+        for( auto & p : stmt.params)
+        {
+            ensure_id_in_current_context(p->getName(), stmt.line_number, {});
+
+            // If the data type is an UNKNOWN we need to figure out its type
+            // We do this with the help of the symbol table
+            if(p->getType()  == FORGE::DataType::UNKNOWN)
+            {
+                switch(driver.symbol_table.get_value_type(p->getName()))
+                {
+                    case FORGE::DataType::STANDARD_STRING:  p->setType(FORGE::DataType::VAR_STANDARD_STRING);  break;
+                    case FORGE::DataType::STANDARD_INTEGER: p->setType(FORGE::DataType::VAR_STANDARD_INTEGER); break;
+                    case FORGE::DataType::STANDARD_DOUBLE:  p->setType(FORGE::DataType::VAR_STANDARD_DOUBLE);  break;
+                    case FORGE::DataType::STANDARD_CHAR:    p->setType(FORGE::DataType::VAR_STANDARD_CHAR);    break;
+                    default:
+                        driver.code_forge.get_reporter().issue_report(
+                            new FORGE::InternalReport(
+                                {
+                                    "DEL::Analyzer",
+                                    "Analyzer.cpp",
+                                    "validate_call",
+                                    {
+                                        "Default accessed while attempting to set a parameter variable type"
+                                    }
+                                }
+                            )
+                        );
+                        break;
+                }
+            }
+            else if(p->getType() == FORGE::DataType::REF_UNKNOWN)
+            {
+                switch(driver.symbol_table.get_value_type(p->getName()))
+                {
+                    case FORGE::DataType::STANDARD_STRING:  p->setType(FORGE::DataType::REF_STANDARD_STRING);  break;
+                    case FORGE::DataType::STANDARD_INTEGER: p->setType(FORGE::DataType::REF_STANDARD_INTEGER); break;
+                    case FORGE::DataType::STANDARD_DOUBLE:  p->setType(FORGE::DataType::REF_STANDARD_DOUBLE);  break;
+                    case FORGE::DataType::STANDARD_CHAR:    p->setType(FORGE::DataType::REF_STANDARD_CHAR);    break;
+                    default:
+                        driver.code_forge.get_reporter().issue_report(
+                            new FORGE::InternalReport(
+                                {
+                                    "DEL::Analyzer",
+                                    "Analyzer.cpp",
+                                    "validate_call",
+                                    {
+                                        "Default accessed while attempting to set a parameter reference type"
+                                    }
+                                }
+                            )
+                        );
+                        break;
+                }
+            }
+        }
+
+        //  Check that the types match what we expect
+        //
+        for(uint16_t i = 0; i < stmt.params.size(); i++ )
+        {
+
+#warning Josh read this note once renee gets done talking - This is where you left off
+            /*
+                    This will give us issues as-is as VAR_STANDARD_INT and STANDARD_INT wont match
+                    we need to manually allow this as some might be variables, some might be raw
+            
+            
+            */
+            if(stmt.params[i]->getType() != params[i].getType())
+            {
+                driver.code_forge.get_reporter().issue_report(
+                    new FORGE::SemanticReport(
+                        FORGE::Report::Level::ERROR,
+                        driver.current_file_from_directive,
+                        driver.preprocessor.fetch_user_line_number(stmt.line_number),
+                        -1, 
+                        driver.preprocessor.fetch_line(stmt.line_number),
+                        {
+                            "Given parameter \"" + stmt.params[i]->getName() + "\" doesn't match expected data type for call to : " + stmt.function_name,
+                            "Received type  : " + FORGE::DataType_to_string(stmt.params[i]->getType()),
+                            "Expected type  : " + FORGE::DataType_to_string(params[i].getType())
+                        }
+                    )
+                );
+            }
+        }   
+    }
     
+    // -----------------------------------------------------
+    //
+    // -----------------------------------------------------
 
     void Analyzer::validate_and_build_assignment(std::string var_name, Ast * ast, FORGE::DataType type, int line_number)
     {

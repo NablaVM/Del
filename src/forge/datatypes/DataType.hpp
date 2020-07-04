@@ -12,6 +12,10 @@ namespace FORGE
         STANDARD_DOUBLE,
         STANDARD_CHAR,
         STANDARD_STRING,
+        VAR_STANDARD_INTEGER,
+        VAR_STANDARD_DOUBLE,
+        VAR_STANDARD_CHAR,
+        VAR_STANDARD_STRING,
         REF_STANDARD_INTEGER,
         REF_STANDARD_DOUBLE,
         REF_STANDARD_CHAR,
@@ -34,6 +38,10 @@ namespace FORGE
             case DataType::REF_STANDARD_DOUBLE:     return "REF_STANDARD_DOUBLE";
             case DataType::REF_STANDARD_CHAR:       return "REF_STANDARD_CHAR";
             case DataType::REF_STANDARD_STRING:     return "REF_STANDARD_STRING";
+            case DataType::VAR_STANDARD_INTEGER:    return "VAR_STANDARD_INTEGER";
+            case DataType::VAR_STANDARD_DOUBLE:     return "VAR_STANDARD_DOUBLE";
+            case DataType::VAR_STANDARD_CHAR:       return "VAR_STANDARD_CHAR";
+            case DataType::VAR_STANDARD_STRING:     return "VAR_STANDARD_STRING";
             case DataType::NIL:                     return "NIL";
             case DataType::UNDEFINED:               return "UNDEFINED";
             case DataType::UNKNOWN:                 return "UNKNOWN";

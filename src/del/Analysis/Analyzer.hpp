@@ -57,6 +57,11 @@ namespace DEL
 
         void report_incomplete(std::string what);
 
+
+        void ensure_id_in_current_context(std::string id, int line_no, std::vector<FORGE::DataType> allowed);
+
+        void validate_call(Call & stmt);
+
         void validate_and_build_assignment(std::string var_name, Ast * ast, FORGE::DataType type, int line_number);
     };
 }
