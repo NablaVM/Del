@@ -9,6 +9,7 @@
 #include <map>
 #include <string>
 #include "ForgeFwd.hpp"
+#include "managers/Memory.hpp"
 
 namespace FORGE
 {
@@ -108,6 +109,11 @@ namespace FORGE
         //! \brief Generate a unique context name
         //! \returns Unique symbol to use as a context
         std::string generate_unique_context();
+
+        //! \brief Get the memory information of a symbol
+        //! \param symbol The symbol to get the memory of
+        //! \note This doesn't ensure that the symbol exists
+        Memory::MemAlloc get_mem_info(std::string symbol);
 
         friend Forge;
     private:

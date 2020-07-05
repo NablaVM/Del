@@ -436,4 +436,9 @@ namespace FORGE
                 )
         );
     }
+
+    Memory::MemAlloc SymbolTable::get_mem_info(std::string symbol)
+    {
+        return forge.memory_manager.get_mem_info(symbol);
+    }
 }

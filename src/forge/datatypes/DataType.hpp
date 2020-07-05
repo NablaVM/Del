@@ -82,5 +82,10 @@ namespace FORGE
                 type == DataType::STANDARD_STRING );
     }
 
+    static bool DataType_is_double(DataType type)
+    {
+        return((int)type >= 20 && (int)type < 30);
+    }
+
 }
 #endif

@@ -13,6 +13,14 @@ set(FORGE_HEADERS
     ${FORGE_DIR}/Generator.hpp
     ${FORGE_DIR}/SystemSettings.hpp
 
+    ${FORGE_DIR}/asm/AsmInit.hpp
+    ${FORGE_DIR}/asm/AsmMath.hpp
+    ${FORGE_DIR}/asm/AsmStoreLoad.hpp
+    ${FORGE_DIR}/asm/AsmSupport.hpp
+
+    ${FORGE_DIR}/blocks/BlockAggregator.hpp
+    ${FORGE_DIR}/blocks/Common.hpp
+
     ${FORGE_DIR}/constructs/Expression.hpp
     ${FORGE_DIR}/constructs/Function.hpp
     ${FORGE_DIR}/constructs/Variable.hpp
@@ -44,7 +52,11 @@ set(FORGE_HEADERS
 
 set(FORGE_SOURCES
     ${FORGE_DIR}/Forge.cpp
+    
+    ${FORGE_DIR}/asm/AsmSupport.cpp
+
     ${FORGE_DIR}/constructs/Function.cpp
+    
     ${FORGE_DIR}/instructions/Assignment.cpp
     ${FORGE_DIR}/instructions/Call.cpp
     ${FORGE_DIR}/instructions/If.cpp

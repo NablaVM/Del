@@ -20,6 +20,6 @@ namespace FORGE
         // End of function
         result.push_back("\n>\n");
 
-        return {};
+        return result;
     }
 }
