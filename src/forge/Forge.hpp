@@ -4,6 +4,7 @@
 #include "ForgeFwd.hpp"
 #include "constructs/Function.hpp"
 #include "managers/Memory.hpp"
+#include "codegen/Codegen.hpp"
 
 #include <functional>
 
@@ -16,6 +17,8 @@ namespace FORGE
     
         //! \brief Create a forge
         Forge();
+
+        void setSymbolTable(SymbolTable & symbol_table);
 
         //! \brief Destruct forge
         ~Forge();
@@ -45,6 +48,9 @@ namespace FORGE
         friend SymbolTable;
 
     private:
+
+        SymbolTable * symbol_table;
+        Codegen code_gen;
     
         Memory memory_manager;
         Reporter * reporter;

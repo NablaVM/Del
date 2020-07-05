@@ -1,7 +1,7 @@
 #ifndef FORGE_INSTRUCTION_HPP
 #define FORGE_INSTRUCTION_HPP
 
-#include "Generator.hpp"
+#include "GeneratorIf.hpp"
 
 namespace FORGE
 {
@@ -17,7 +17,7 @@ namespace FORGE
         ELIF
     };
 
-    class InstructionIf : public Generator
+    class InstructionIf : public GeneratorIf
     {
     public:
         InstructionIf(InstructionType type) : type(type){}

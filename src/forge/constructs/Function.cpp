@@ -2,24 +2,35 @@
 
 namespace FORGE
 {
-    std::vector<std::string> Function::generate_NASM(SymbolTable & symbol_table)
+    void Function::generate_NASM(Codegen & code_gen)
     {
-        std::vector<std::string> result;
+        std::vector<CODEGEN::TYPES::ParamInfo> params;
 
-        result.push_back("\n<" + name + ":\n");
+        SymbolTable * symbol_table = code_gen.getSymbolTable();
 
-        // create function <name: ... 
-        // load parameters
+        uint16_t param_index = 0;
+        for(auto & p : parameters)
+        {
+
+            Memory::MemAlloc mem_info = symbol_table->get_mem_info(p->getName());
+            params.push_back(
+                {
+                    mem_info.start_pos,
+                    mem_info.start_pos + SETTINGS::SYSTEM_WORD_SIZE_BYTES,
+                    param_index++
+                }
+            );
+        }
+
+        code_gen.begin_function(name, params);
 
         for(auto & ins : instructions)
         {
-            std::vector<std::string> code = ins->generate_NASM(symbol_table);
-            result.insert(result.end(), code.begin(), code.end());
+            ins->generate_NASM(code_gen);
         }
 
-        // End of function
-        result.push_back("\n>\n");
+        code_gen.end_function();
 
-        return result;
+        return;
     }
 }

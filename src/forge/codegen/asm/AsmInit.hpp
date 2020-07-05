@@ -21,7 +21,7 @@ static const std::string ASM_FILE_START = R"asmstart(
 ;   by someone who knows very little about compiler design
 ;       - Josh A. Bosley
 
-.file "DEL_Lang"
+.file "FORGE_Lang"
 
 .init __del__program__init
 

@@ -10,17 +10,9 @@ set(FORGE_HEADERS
     ${FORGE_DIR}/Forge.hpp
     ${FORGE_DIR}/ForgeFwd.hpp
     ${FORGE_DIR}/ForgeSignal.hpp
-    ${FORGE_DIR}/Generator.hpp
+    ${FORGE_DIR}/GeneratorIf.hpp
     ${FORGE_DIR}/SystemSettings.hpp
-
-    ${FORGE_DIR}/asm/AsmInit.hpp
-    ${FORGE_DIR}/asm/AsmMath.hpp
-    ${FORGE_DIR}/asm/AsmStoreLoad.hpp
-    ${FORGE_DIR}/asm/AsmSupport.hpp
-
-    ${FORGE_DIR}/blocks/BlockAggregator.hpp
-    ${FORGE_DIR}/blocks/Common.hpp
-
+    
     ${FORGE_DIR}/constructs/Expression.hpp
     ${FORGE_DIR}/constructs/Function.hpp
     ${FORGE_DIR}/constructs/Variable.hpp
@@ -48,12 +40,27 @@ set(FORGE_HEADERS
     ${FORGE_DIR}/reporting/InternalReport.hpp
     ${FORGE_DIR}/reporting/SemanticReport.hpp
     ${FORGE_DIR}/reporting/SyntaxReport.hpp
+
+
+    ${FORGE_DIR}/codegen/Codegen.hpp
+    ${FORGE_DIR}/codegen/Generator.hpp
+    ${FORGE_DIR}/codegen/asm/AsmMath.hpp
+    ${FORGE_DIR}/codegen/asm/AsmStoreLoad.hpp
+    ${FORGE_DIR}/codegen/asm/AsmSupport.hpp
+    ${FORGE_DIR}/codegen/codeblocks/Alloc.hpp
+    ${FORGE_DIR}/codegen/codeblocks/BlockAggregator.hpp
+    ${FORGE_DIR}/codegen/codeblocks/Codeblock.hpp
+    ${FORGE_DIR}/codegen/codeblocks/ConditionalContext.hpp
+    ${FORGE_DIR}/codegen/codeblocks/ForLoopContext.hpp
+    ${FORGE_DIR}/codegen/codeblocks/Function.hpp
+    ${FORGE_DIR}/codegen/codeblocks/LoadStore.hpp
+    ${FORGE_DIR}/codegen/codeblocks/Operations.hpp
+    ${FORGE_DIR}/codegen/codeblocks/Primitives.hpp
 )
 
 set(FORGE_SOURCES
     ${FORGE_DIR}/Forge.cpp
-    
-    ${FORGE_DIR}/asm/AsmSupport.cpp
+
 
     ${FORGE_DIR}/constructs/Function.cpp
     
@@ -73,4 +80,10 @@ set(FORGE_SOURCES
     ${FORGE_DIR}/reporting/InternalReport.cpp
     ${FORGE_DIR}/reporting/SemanticReport.cpp
     ${FORGE_DIR}/reporting/SyntaxReport.cpp
+
+
+    ${FORGE_DIR}/codegen/Codegen.cpp
+    ${FORGE_DIR}/codegen/Generator.cpp
+    ${FORGE_DIR}/codegen/asm/AsmSupport.cpp
+
 )

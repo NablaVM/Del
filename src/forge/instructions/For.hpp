@@ -21,7 +21,7 @@ namespace FORGE
         // Expression for entering into block
         Expression * expression;
 
-        virtual std::vector<std::string> generate_NASM(SymbolTable & symbol_table) override;
+        virtual void generate_NASM(Codegen & code_gen) override;
 
         virtual void add_continue_statement() override;
     };

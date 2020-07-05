@@ -2,8 +2,6 @@
 
 #include <iostream>
 
-#include "forge/asm/AsmMath.hpp"
-
 namespace FORGE
 {
     namespace
@@ -11,7 +9,7 @@ namespace FORGE
         static uint64_t label_id = 0;
     }
 
-    std::vector<std::string> Assignment::generate_NASM(SymbolTable & symbol_table) 
+    void Assignment::generate_NASM(Codegen & code_gen) 
     {
         /*
         CODE::BlockAggregator * current_aggregator = new CODE::BlockAggregator();
@@ -60,6 +58,6 @@ namespace FORGE
         std::vector<std::string> result = current_aggregator->instructions;
         delete current_aggregator;
 */
-        return {};
+        return;
     }
 }

@@ -53,7 +53,13 @@ namespace DEL
 
    private:
 
+      // The code forge
+      FORGE::SymbolTable symbol_table;
+      
       Analyzer analyzer;
+
+      FORGE::Forge code_forge;
+      
       Preprocessor preprocessor;
 
       //! \brief Parse from an istream - Not currently used
@@ -68,9 +74,6 @@ namespace DEL
       DEL::DEL_Parser  *parser  = nullptr;
       DEL::DEL_Scanner *scanner = nullptr;
 
-      // The code forge
-      FORGE::Forge code_forge;
-      FORGE::SymbolTable symbol_table;
    };
 
 }

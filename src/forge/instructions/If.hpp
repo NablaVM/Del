@@ -19,7 +19,7 @@ namespace FORGE
         // Expression for entering into block
         Expression * expression;
 
-        virtual std::vector<std::string> generate_NASM(SymbolTable & symbol_table) override;
+        virtual void generate_NASM(Codegen & code_gen) override;
     };
 
     //! \brief An ELIF instruction
@@ -33,7 +33,7 @@ namespace FORGE
         // Expression for entering into block
         Expression * expression;
 
-        virtual std::vector<std::string> generate_NASM(SymbolTable & symbol_table) override;
+        virtual void generate_NASM(Codegen & code_gen) override;
     };
 }
 

@@ -4,9 +4,9 @@
 
 namespace FORGE
 {
-    std::vector<std::string> Call::generate_NASM(SymbolTable & symbol_table) 
+    void Call::generate_NASM(Codegen & code_gen) 
     {
         std::cout << "FORGE::CALL" << std::endl;
-        return {};
+        return;
     }
 }

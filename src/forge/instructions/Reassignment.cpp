@@ -4,9 +4,9 @@
 
 namespace FORGE
 {
-    std::vector<std::string> Reassignment::generate_NASM(SymbolTable & symbol_table) 
+    void Reassignment::generate_NASM(Codegen & code_gen) 
     {
         std::cout << "FORGE::ASSIGN(" << variable->getName() << ")" << std::endl;
-        return {};
+        return;
     }
 }

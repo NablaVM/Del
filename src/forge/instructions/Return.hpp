@@ -18,7 +18,7 @@ namespace FORGE
 
         Expression * expression;
 
-        virtual std::vector<std::string> generate_NASM(SymbolTable & symbol_table) override;
+        virtual void generate_NASM(Codegen & code_gen) override;
     };
 }
 

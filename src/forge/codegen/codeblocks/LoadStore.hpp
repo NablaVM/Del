@@ -1,7 +1,7 @@
 #ifndef FORGE_LOAD_STORE_BLOCKS_HPP
 #define FORGE_LOAD_STORE_BLOCKS_HPP
 
-#include "Common.hpp"
+#include "Codeblock.hpp"
 
 namespace FORGE
 {
@@ -11,7 +11,7 @@ namespace
 {
     static uint64_t SUCCESS_LABEL_COUNTER = 0;
 }
-/*
+
     //
     //  Load
     //
@@ -68,14 +68,14 @@ namespace
             code.push_back(ss1.str()); 
         }
     };
-*/
+
     //
     //  Store
     //
     class Store : public Block
     {
     public:
-        Store(uint64_t mem_start, std::string id) : Block()
+        Store(uint64_t mem_start, uint64_t byte_len, std::string id) : Block()
         {
             std::string title_comment = "; <<< STORE >>>";
             std::string address_comment = "Address for [ " + id + " ]";
@@ -94,10 +94,13 @@ namespace
                << "size r1 gs" << TAB << "; Get current size of GS into r1 for call" << NL << NLT
                << "; Get words from local stack an put on gs for transit" << NL;
 
-            ss << NLT
-                << "popw r5" << WS << CALC_STACK << TAB << "; Get word from LS" << NLT 
-                << "pushw gs r5" << TAB << "; Push to GS";
-    
+            for(int i = 0; i < byte_len / SETTINGS::SYSTEM_WORD_SIZE_BYTES; i++)
+            {
+                ss << NLT
+                   << "popw r5" << WS << CALC_STACK << TAB << "; Get word from LS" << NLT 
+                   << "pushw gs r5" << TAB << "; Push to GS";
+            }
+
             std::string store_label = "store_success_label_" + std::to_string(SUCCESS_LABEL_COUNTER++);
 
             ss << NL << NLT 
@@ -110,9 +113,10 @@ namespace
                << store_label << ":" << NL;
 
             code.push_back(ss.str()); 
+
         }
     };
-/*
+
     //
     //  Move Address
     //
@@ -142,7 +146,7 @@ namespace
             code.push_back(ss.str()); 
         }
     };
-*/
+
 }
 }
 

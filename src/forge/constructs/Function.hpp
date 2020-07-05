@@ -1,7 +1,7 @@
 #ifndef FORGE_FUNCTION_HPP
 #define FORGE_FUNCTION_HPP
 
-#include "Generator.hpp"
+#include "GeneratorIf.hpp"
 #include "Aggregator.hpp"
 
 #include "datatypes/DataType.hpp"
@@ -14,7 +14,7 @@ namespace FORGE
 {
     //! \brief A function object
     //!        This object is a generator and an aggregator as it generates code and contains instructions
-    class Function : public Generator, public Aggregator
+    class Function : public GeneratorIf, public Aggregator
     {
     public:
 
@@ -34,7 +34,7 @@ namespace FORGE
         DataType return_type;
         std::vector<Variable*> parameters;
 
-        virtual std::vector<std::string> generate_NASM(SymbolTable & symbol_table) override;
+        virtual void generate_NASM(Codegen & code_gen) override;
     };
 }
 

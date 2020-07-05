@@ -4,10 +4,10 @@
 
 namespace FORGE
 {
-    std::vector<std::string> Return::generate_NASM(SymbolTable & symbol_table) 
+    void Return::generate_NASM(Codegen & code_gen) 
     {
         std::cout << "FORGE::RETURN" << std::endl;
 
-        return {};
+        return;
     }
 }

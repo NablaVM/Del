@@ -1,10 +1,9 @@
 #ifndef FORGE_BLOCK_AGGREGATOR_HPP
 #define FORGE_BLOCK_AGGREGATOR_HPP
 
-#include "forge/blocks/Common.hpp"
+#include "Codeblock.hpp"
 #include "forge/managers/Memory.hpp"
 #include <stack>
-
 namespace FORGE
 {
 namespace CODE
@@ -32,6 +31,7 @@ namespace CODE
             allocs.push(mem_info);
         }
 
+    protected:
         std::vector<std::string> instructions; 
         std::stack<Memory::MemAlloc > allocs;
     };

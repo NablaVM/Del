@@ -42,9 +42,10 @@ namespace FORGE
         
         //! \brief Import a math module
         //! \param math_import The module to import
+        //! \param function_name_out [out] Function name to use 
         //! \param destination [out] The vector to place the code
         //! \note This method can be called as much as you want, it will only ever import one copy of the module requested
-        void import_math(AsmSupport::Math math_import, std::vector<std::string> & destination);
+        void import_math(AsmSupport::Math math_import, std::string & function_name_out, std::vector<std::string> & destination);
 
     private:
 

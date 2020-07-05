@@ -4,11 +4,11 @@
 
 namespace FORGE
 {
-    std::vector<std::string> While::generate_NASM(SymbolTable & symbol_table) 
+    void While::generate_NASM(Codegen & code_gen) 
     {
         std::cout << "FORGE::WHILE" << std::endl;
 
-        return {};
+        return;
     }
 
     void While::add_continue_statement()

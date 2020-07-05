@@ -8,19 +8,20 @@ namespace FORGE
     //
     // -----------------------------------------------------
 
-    std::vector<std::string> If::generate_NASM(SymbolTable & symbol_table)
+    void If::generate_NASM(Codegen & code_gen)
     {
         std::cout << "FORGE::IF" << std::endl;
-        return {};
+
+        return;
     }
 
     // -----------------------------------------------------
     //
     // -----------------------------------------------------
 
-    std::vector<std::string> Elif::generate_NASM(SymbolTable & symbol_table)
+    void Elif::generate_NASM(Codegen & code_gen)
     {
         std::cout << "FORGE::ELIF" << std::endl;
-        return {};
+        return;
     }
 }

@@ -75,7 +75,7 @@ namespace FORGE
     //
     // ----------------------------------------------------------
 
-    void AsmSupport::import_math(AsmSupport::Math math_import, std::vector<std::string> & destination)
+    void AsmSupport::import_math(AsmSupport::Math math_import, std::string & function_name_out, std::vector<std::string> & destination)
     {
         // Only include the function once
         if(!math_imports[math_import].imported)
@@ -84,5 +84,8 @@ namespace FORGE
 
             math_imports[math_import].imported = true;
         }
+
+        // Always set the name
+        function_name_out = math_imports[math_import].function_name;
     }
 }
