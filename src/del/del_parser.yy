@@ -352,7 +352,7 @@ elif_stmt
    ;
 
 else_stmt
-   : ELSE block   { $$ = new DEL::If(If::Type::ELSE, 
+   : ELSE block   { $$ = new DEL::If(If::Type::ELIF, 
                                      new DEL::Ast(DEL::Ast::NodeType::VALUE, FORGE::DataType::STANDARD_INTEGER, "1", nullptr, nullptr),
                                      $2,
                                      nullptr,

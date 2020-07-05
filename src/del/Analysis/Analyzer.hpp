@@ -5,6 +5,8 @@
 #include "forge/constructs/Function.hpp"
 #include "forge/constructs/Expression.hpp"
 
+#include <stack>
+
 namespace DEL
 {
     class DEL_Driver;
@@ -51,16 +53,21 @@ namespace DEL
         FunctionRequirements function_watcher;
 
         FORGE::Aggregator * current_forge_aggregator;
-        Function *        current_front_function;
+        Function *          current_front_function;
 
         std::vector<FORGE::Expression::ExpressionItem> forge_expression_items;
 
-        void report_incomplete(std::string what);
+        std::stack<FORGE::Aggregator*> aggregators;
 
+        void report_incomplete(std::string what);
 
         void ensure_id_in_current_context(std::string id, int line_no, std::vector<FORGE::DataType> allowed);
 
         void validate_call(Call & stmt);
+
+        FORGE::DataType get_id_type(std::string id, int line_no);
+
+        FORGE::DataType determine_expression_type(Ast * ast, Ast * traverse, bool left, int line_no);
 
         void validate_and_build_assignment(std::string var_name, Ast * ast, FORGE::DataType type, int line_number);
     };

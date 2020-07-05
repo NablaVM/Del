@@ -35,6 +35,12 @@ namespace FORGE
         //! \param The pointer to the function that is ready to build
         void add_ready_function(Function * function);
 
+        //! \brief Generate the binary
+        //! \returns Vector of bytes for execution
+        //! \post Once this is called the symbol table will be locked and no more code can 
+        //!       be readied for generation
+        std::vector<uint8_t> generate_binary(SymbolTable & symbol_table);
+
         friend Reporter;
         friend SymbolTable;
 

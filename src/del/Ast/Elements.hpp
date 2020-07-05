@@ -127,12 +127,11 @@ namespace DEL
         enum class Type
         {
             IF,
-            ELIF,
-            ELSE
+            ELIF
         };
 
         If(If::Type type, Ast * ast, ElementList elements, Element * trail, int line_number) : 
-            Element(line_number), type(type), elements(elements), trail(trail)
+            Element(line_number), type(type), ast(ast), elements(elements), trail(trail)
         {}
 
         ~If(){ if(trail) { delete trail; } }

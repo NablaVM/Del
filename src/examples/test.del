@@ -1,8 +1,28 @@
+
+func toot() -> int {
+
+
+    return 3;
+}
+
 func main() -> nil {
 
     let a : int = 55;
 
-    let an_int : int = 4 + 4 * a; 
+    let an_int : int = 4 + toot();
+
+    if(5 == 5)
+    {
+
+    } 
+    elif (0)
+    {
+
+    }
+    else
+    {
+        
+    }
 
     return;
 }

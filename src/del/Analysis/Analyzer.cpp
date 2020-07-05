@@ -11,6 +11,7 @@
 #include "forge/instructions/Instruction.hpp"
 #include "forge/instructions/Assignment.hpp"
 #include "forge/instructions/Call.hpp"
+#include "forge/instructions/If.hpp"
 #include "forge/instructions/Reassignment.hpp"
 #include "forge/instructions/Return.hpp"
 
@@ -122,7 +123,11 @@ namespace DEL
         function_watcher.has_return = false;
 
         FORGE::Function * current_forge_function = new FORGE::Function(stmt.name , stmt.return_type->dataType);
-        current_forge_aggregator = current_forge_function;
+
+        aggregators.push(current_forge_function);
+
+        current_forge_aggregator = aggregators.top();
+
         current_front_function = &stmt;
 
         for(auto & el : stmt.elements)
@@ -158,6 +163,7 @@ namespace DEL
         // Reset pointers
         current_forge_aggregator = nullptr;
         current_front_function = nullptr;
+        aggregators.pop();
 
         // Reset memory manager for alloc variables in new functions
         driver.code_forge.reset_memory();
@@ -175,14 +181,13 @@ namespace DEL
 
     void Analyzer::accept(Call & stmt) 
     {
-        // Validate the call, and change any UNKNOWN types presented by variables being passed to their 
-        // actual data type
+        // Validate the call, and change any UNKNOWN types presented by variables being passed to their data type
         validate_call(stmt);
 
-       // current_forge_aggregator->add_instruction(
-       //     new FORGE::Call(stmt.params)
-       // );
-
+        // Create call and put in aggregator
+        current_forge_aggregator->add_instruction(
+            new FORGE::Call(stmt.params)
+        );
     }
 
     // -----------------------------------------------------
@@ -208,7 +213,7 @@ namespace DEL
             forge_expression_items.clear();
 
             // Build the expression items vector for the return, expect the type to be that declared by the function
-            validate_and_build_assignment("Return Expression", stmt.ast->right, current_front_function->return_type->dataType, stmt.line_number);
+            validate_and_build_assignment("Return Expression", stmt.ast, current_front_function->return_type->dataType, stmt.line_number);
 
             // Create the return and give to aggregator
             current_forge_aggregator->add_instruction(
@@ -309,30 +314,97 @@ namespace DEL
 
     void Analyzer::accept(If & stmt) 
     {
-        /*
-        std::cout << "Analyzer::accept(If & stmt)" << std::endl;
-
         switch(stmt.type)
         {
-        case DEL::If::Type::IF:   std::cout << "\t Type: IF  " << std::endl; break;
-        case DEL::If::Type::ELIF: std::cout << "\t Type: ELIF" << std::endl; break;
-        case DEL::If::Type::ELSE: std::cout << "\t Type: ELSE" << std::endl; break;
-        }
-
-        for(auto & e : stmt.elements)
+        case DEL::If::Type::IF:   
         {
-            e->visit(*this);
-            delete e;
-        }
+            FORGE::DataType if_data_type = determine_expression_type(stmt.ast, stmt.ast, true, stmt.line_number);
 
-        if(stmt.trail)
+            // Clear the temp vector for expression building
+            forge_expression_items.clear();
+
+            // Build the expression items vector
+            validate_and_build_assignment("If Statement", stmt.ast, if_data_type, stmt.line_number);
+
+            // Create the if function
+            FORGE::If * if_statement = new FORGE::If(new FORGE::Expression(if_data_type, forge_expression_items));
+
+            // Push it as the currrent aggregator
+            aggregators.push(if_statement);
+
+            // Set the aggregator
+            current_forge_aggregator = aggregators.top();
+
+            // Add elements
+            for(auto & el : stmt.elements)
+            {
+                el->visit(*this);
+                delete el;
+            }
+
+            // Remove if function
+            aggregators.pop();
+
+            // Reset aggregator
+            current_forge_aggregator = aggregators.top();
+
+            // Add the built statement to whatever the if statement was in
+            current_forge_aggregator->add_instruction(if_statement);
+
+            // If the statement has a trailing else of whatever, we need to folow it
+            if(stmt.trail)
+            {
+                stmt.trail->visit(*this);
+            }
+            return;
+        }
+        case DEL::If::Type::ELIF:
         {
-            std::cout << "\t" << "---> Following trail" << std::endl;
+            FORGE::DataType elif_data_type = determine_expression_type(stmt.ast, stmt.ast, true, stmt.line_number);
 
-            stmt.trail->visit(*this);
+            // Clear the temp vector for expression building
+            forge_expression_items.clear();
+
+            // Build the expression items vector
+            validate_and_build_assignment("Else If Statement", stmt.ast, elif_data_type, stmt.line_number);
+
+            // Create the if function
+            FORGE::Elif * elif_statement = new FORGE::Elif(new FORGE::Expression(elif_data_type, forge_expression_items));
+
+            // Push it as the currrent aggregator
+            aggregators.push(elif_statement);
+
+            // Set the aggregator
+            current_forge_aggregator = aggregators.top();
+
+            // Add elements
+            for(auto & el : stmt.elements)
+            {
+                el->visit(*this);
+                delete el;
+            }
+
+            // Remove if function
+            aggregators.pop();
+
+            // Reset aggregator
+            current_forge_aggregator = aggregators.top();
+
+            // Add the built statement to whatever the if statement was in
+            current_forge_aggregator->add_instruction(elif_statement);
+
+            // If the statement has a trailing else of whatever, we need to folow it
+            if(stmt.trail)
+            {
+                stmt.trail->visit(*this);
+            }
+            return;
         }
+        /*
+            ELSE statements are just ELIF(1) statements, so we don't actually handle them in a special way. 
+            This is also stated in the grammar file
         */
-       report_incomplete("If");
+        }
     }
 
     // -----------------------------------------------------
@@ -547,12 +619,12 @@ namespace DEL
         //
         for( auto & p : stmt.params)
         {
-            ensure_id_in_current_context(p->getName(), stmt.line_number, {});
 
             // If the data type is an UNKNOWN we need to figure out its type
             // We do this with the help of the symbol table
             if(p->getType()  == FORGE::DataType::UNKNOWN)
             {
+                ensure_id_in_current_context(p->getName(), stmt.line_number, {});
                 switch(driver.symbol_table.get_value_type(p->getName()))
                 {
                     case FORGE::DataType::STANDARD_STRING:  p->setType(FORGE::DataType::VAR_STANDARD_STRING);  break;
@@ -577,6 +649,7 @@ namespace DEL
             }
             else if(p->getType() == FORGE::DataType::REF_UNKNOWN)
             {
+                ensure_id_in_current_context(p->getName(), stmt.line_number, {});
                 switch(driver.symbol_table.get_value_type(p->getName()))
                 {
                     case FORGE::DataType::STANDARD_STRING:  p->setType(FORGE::DataType::REF_STANDARD_STRING);  break;
@@ -605,15 +678,11 @@ namespace DEL
         //
         for(uint16_t i = 0; i < stmt.params.size(); i++ )
         {
-
-#warning Josh read this note once renee gets done talking - This is where you left off
             /*
-                    This will give us issues as-is as VAR_STANDARD_INT and STANDARD_INT wont match
-                    we need to manually allow this as some might be variables, some might be raw
-            
-            
+                We call base_equal to ensure that anything that is a *_INTEGER or *_DOUBLE etc has a matching *_DOUBLE etc
+                this way a VAR_STANDARD_INTEGER will be matched as the same base type as a STANDARD_INTEGER or REF_STANDARD_INTEGER
             */
-            if(stmt.params[i]->getType() != params[i].getType())
+            if(!FORGE::DataType_base_equal(stmt.params[i]->getType(), params[i].getType()))
             {
                 driver.code_forge.get_reporter().issue_report(
                     new FORGE::SemanticReport(
@@ -632,7 +701,88 @@ namespace DEL
             }
         }   
     }
-    
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    FORGE::DataType Analyzer::get_id_type(std::string id, int line_number)
+    {
+        if(!driver.symbol_table.does_symbol_exist(id))
+        {
+            driver.code_forge.get_reporter().issue_report(
+                new FORGE::SemanticReport(
+                    FORGE::Report::Level::ERROR,
+                    driver.current_file_from_directive,
+                    driver.preprocessor.fetch_user_line_number(line_number),
+                    -1, 
+                    driver.preprocessor.fetch_line(line_number),
+                    {
+                        "Symbol \"" + id  + "\" used in expression does not exist"
+                    }
+                )
+            );
+        }
+
+        return driver.symbol_table.get_value_type(id);
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    FORGE::DataType Analyzer::determine_expression_type(Ast * ast, Ast * traverse, bool left, int line_no)
+    {
+        if(ast->node.node_type == Ast::NodeType::VALUE)
+        {
+            return ast->node.data_type;
+        }
+        else if (ast->node.node_type == Ast::NodeType::IDENTIFIER)
+        {
+            return get_id_type(ast->node.data, line_no);
+        }
+        else if (ast->node.node_type == Ast::NodeType::CALL)
+        {
+            Call * call = static_cast<Call*>(ast);
+
+            validate_call(*call);
+
+            return driver.symbol_table.get_return_type_of_context(call->function_name);
+        }
+        if(left)
+        {
+            // This should never happen, but we handle it just in case
+            if(ast->left == nullptr)
+            {
+                return determine_expression_type(traverse, traverse, false, line_no);
+            }
+
+            // Go down left side - we only need to traverse one side
+            return determine_expression_type(ast->right, traverse, true, line_no);
+        }
+        else
+        {
+            // This REALLY should't happen.
+            if(ast->right == nullptr)
+            {
+                driver.code_forge.get_reporter().issue_report(
+                    new FORGE::InternalReport(
+                        {
+                            "DEL::Analyzer",
+                            "Analyzer.cpp",
+                            "determine_expression_type",
+                            {
+                                "Developer error : Failed to determine expression type"
+                            }
+                        }
+                    )
+                );
+            }
+
+            return determine_expression_type(ast->right, traverse, false, line_no);
+        }
+    }
+
     // -----------------------------------------------------
     //
     // -----------------------------------------------------
@@ -720,18 +870,14 @@ namespace DEL
             //      EXPR CALL
             //
             case Ast::NodeType::CALL:  
-            {
-/*
-    >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.
+            {   
+                // The AST pointer should be able to be a call now, because, its awesome
+                Call * call = static_cast<Call*>(ast);
 
-                Validate call 
+                // Validate the call
+                validate_call(*call);
 
-    >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.
-*/
-                report_incomplete("CALL - IN EXPRESSION");
-
-
-                forge_expression_items.push_back({FORGE::Expression::Instruction::CALL, ast->node.data});
+                forge_expression_items.push_back({FORGE::Expression::Instruction::CALL, ast->node.data, call->params});
                 return;
             }
             case Ast::NodeType::ROOT:  

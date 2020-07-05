@@ -22,6 +22,7 @@ set(FORGE_HEADERS
     ${FORGE_DIR}/instructions/Instruction.hpp
     ${FORGE_DIR}/instructions/Assignment.hpp
     ${FORGE_DIR}/instructions/Call.hpp
+    ${FORGE_DIR}/instructions/If.hpp
     ${FORGE_DIR}/instructions/Ressignment.hpp
     ${FORGE_DIR}/instructions/Return.hpp
 
@@ -42,6 +43,7 @@ set(FORGE_SOURCES
     ${FORGE_DIR}/constructs/Function.cpp
     ${FORGE_DIR}/instructions/Assignment.cpp
     ${FORGE_DIR}/instructions/Call.cpp
+    ${FORGE_DIR}/instructions/If.cpp
     ${FORGE_DIR}/instructions/Reassignment.cpp
     ${FORGE_DIR}/instructions/Return.cpp
 

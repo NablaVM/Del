@@ -109,6 +109,7 @@ namespace FORGE
         //! \returns Unique symbol to use as a context
         std::string generate_unique_context();
 
+        friend Forge;
     private:
         Forge & forge;
         bool is_locked;

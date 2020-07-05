@@ -13,7 +13,8 @@ namespace FORGE
         RETURN,
         FOR_LOOP,
         WHILE_LOOP,
-        IF
+        IF,
+        ELIF
     };
 
     class InstructionIf : public Generator

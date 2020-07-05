@@ -2,28 +2,33 @@
 #define FORGE_DATA_TYPE_HPP
 
 #include <string>
+#include <iostream>
 
 namespace FORGE
 {
     //! \brief Data types 
     enum class DataType
     {
-        STANDARD_INTEGER,
-        STANDARD_DOUBLE,
-        STANDARD_CHAR,
-        STANDARD_STRING,
-        VAR_STANDARD_INTEGER,
-        VAR_STANDARD_DOUBLE,
-        VAR_STANDARD_CHAR,
-        VAR_STANDARD_STRING,
-        REF_STANDARD_INTEGER,
-        REF_STANDARD_DOUBLE,
-        REF_STANDARD_CHAR,
-        REF_STANDARD_STRING,
-        NIL,
-        UNDEFINED,
-        UNKNOWN,
-        REF_UNKNOWN
+        STANDARD_INTEGER     = 10,
+        VAR_STANDARD_INTEGER = 11,
+        REF_STANDARD_INTEGER = 12,
+
+        STANDARD_DOUBLE      = 20,
+        VAR_STANDARD_DOUBLE  = 21,
+        REF_STANDARD_DOUBLE  = 22,
+
+        STANDARD_CHAR        = 30,
+        VAR_STANDARD_CHAR    = 31,
+        REF_STANDARD_CHAR    = 32,
+
+        STANDARD_STRING      = 40,
+        VAR_STANDARD_STRING  = 41,
+        REF_STANDARD_STRING  = 42,
+
+        NIL                  = 50,
+        UNDEFINED            = 51,
+        UNKNOWN              = 52,
+        REF_UNKNOWN          = 53
     };
 
     static std::string DataType_to_string(DataType type)
@@ -48,6 +53,33 @@ namespace FORGE
             case DataType::REF_UNKNOWN:             return "REF_UNKNOWN";
         }
         return "UNDEFINED";
+    }
+
+    //! \brief Check if the values match within the same range for the ones that need to be compared
+    static bool DataType_base_equal(DataType lhs, DataType rhs)
+    {
+        if((int)lhs < 20)                   { return((int)rhs < 20); }
+        if((int)lhs >= 20 && (int)lhs < 30) { return((int)rhs >= 20 && (int)lhs < 30); }
+        if((int)lhs >= 30 && (int)lhs < 40) { return((int)rhs >= 30 && (int)lhs < 40); }
+        if((int)lhs >= 40 && (int)lhs < 50) { return((int)rhs >= 40 && (int)lhs < 50); }
+        return false;
+    }
+
+    static bool DataType_is_variable(DataType type)
+    {
+        return (type == DataType::VAR_STANDARD_CHAR     ||
+                type == DataType::VAR_STANDARD_DOUBLE   ||
+                type == DataType::VAR_STANDARD_INTEGER  ||
+                type == DataType::VAR_STANDARD_STRING   ||
+                type == DataType::UNKNOWN);
+    }
+
+    static bool DataType_is_value(DataType type)
+    {
+        return (type == DataType::STANDARD_CHAR     ||
+                type == DataType::STANDARD_DOUBLE   ||
+                type == DataType::STANDARD_INTEGER  ||
+                type == DataType::STANDARD_STRING );
     }
 
 }

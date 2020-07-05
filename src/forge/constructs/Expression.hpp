@@ -49,6 +49,7 @@ namespace FORGE
         {
             Instruction instruction;
             std::string value;       // Depending on the instruction this could be blank, a variable name, a raw value, or a function name for a call
+            std::vector<Variable*> variable_list;
         };
 
         //! \brief Create an expression

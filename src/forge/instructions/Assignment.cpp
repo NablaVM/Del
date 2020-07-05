@@ -8,7 +8,7 @@ namespace FORGE
     {
         std::cout << "FORGE::ASSIGN(" << variable->getName() << ")" << std::endl;
 
-        expression->dump();
+        //expression->dump();
 
         return {};
     }

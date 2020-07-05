@@ -13,9 +13,9 @@ namespace FORGE
     public:
 
         //! \brief Create a call instruction
-        Call(std::vector<Variable> params) : InstructionIf(InstructionType::CALL), params(params) {}
+        Call(std::vector<Variable*> params) : InstructionIf(InstructionType::CALL), params(params) {}
 
-        std::vector<Variable> params;
+        std::vector<Variable*> params;
 
         virtual std::vector<std::string> generate_NASM(SymbolTable & symbol_table) override;
     };

@@ -153,6 +153,10 @@ namespace DEL
    void DEL_Driver::indicate_complete()
    {
       std::cout << "DEL_Driver::indicate_complete()" << std::endl;
+
+      std::vector<uint8_t> bytes = code_forge.generate_binary(symbol_table);
+
+      std::cout << "Code forge generated : " << bytes.size() << " bytes" << std::endl;
    }
 
    // ----------------------------------------------------------
