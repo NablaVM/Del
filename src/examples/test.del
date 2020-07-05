@@ -21,7 +21,20 @@ func main() -> nil {
     }
     else
     {
+
+    }
+
+
+    for(var x : int = 4; x < 10; x = x + 1; ) {
         
+        if(x) {}
+        cont;
+    }
+
+
+    loop ' my_loop {
+        cont;
+        break my_loop;
     }
 
     return;

@@ -22,9 +22,13 @@ set(FORGE_HEADERS
     ${FORGE_DIR}/instructions/Instruction.hpp
     ${FORGE_DIR}/instructions/Assignment.hpp
     ${FORGE_DIR}/instructions/Call.hpp
+    ${FORGE_DIR}/instructions/Continuable.hpp
+    ${FORGE_DIR}/instructions/Breakable.hpp
     ${FORGE_DIR}/instructions/If.hpp
     ${FORGE_DIR}/instructions/Ressignment.hpp
     ${FORGE_DIR}/instructions/Return.hpp
+    ${FORGE_DIR}/instructions/For.hpp
+    ${FORGE_DIR}/instructions/While.hpp
 
     ${FORGE_DIR}/managers/Memory.hpp
     ${FORGE_DIR}/managers/SymbolTable.hpp
@@ -46,6 +50,8 @@ set(FORGE_SOURCES
     ${FORGE_DIR}/instructions/If.cpp
     ${FORGE_DIR}/instructions/Reassignment.cpp
     ${FORGE_DIR}/instructions/Return.cpp
+    ${FORGE_DIR}/instructions/For.cpp
+    ${FORGE_DIR}/instructions/While.cpp
 
     ${FORGE_DIR}/managers/Memory.cpp
     ${FORGE_DIR}/managers/SymbolTable.cpp

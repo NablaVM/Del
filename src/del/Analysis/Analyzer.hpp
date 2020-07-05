@@ -4,6 +4,8 @@
 #include "Ast/Elements.hpp"
 #include "forge/constructs/Function.hpp"
 #include "forge/constructs/Expression.hpp"
+#include "forge/instructions/Continuable.hpp"
+#include "forge/instructions/Breakable.hpp"
 
 #include <stack>
 
@@ -54,6 +56,8 @@ namespace DEL
 
         FORGE::Aggregator * current_forge_aggregator;
         Function *          current_front_function;
+        FORGE::Continuable* current_forge_continuable;
+        FORGE::Breakable  * current_forge_breakable;
 
         std::vector<FORGE::Expression::ExpressionItem> forge_expression_items;
 

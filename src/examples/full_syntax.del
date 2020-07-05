@@ -61,11 +61,6 @@
             break my_loop;
         }
 
-        for(var x : int = 4; x < 10; x = x + 1; ) {
-            
-            if(x) {}
-            cont;
-        }
 
         return;
     }

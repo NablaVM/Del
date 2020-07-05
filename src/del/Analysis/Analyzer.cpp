@@ -14,6 +14,9 @@
 #include "forge/instructions/If.hpp"
 #include "forge/instructions/Reassignment.hpp"
 #include "forge/instructions/Return.hpp"
+#include "forge/instructions/While.hpp"
+#include "forge/instructions/For.hpp"
+#include "forge/instructions/Continuable.hpp"
 
 
 #include <iostream>
@@ -413,16 +416,42 @@ namespace DEL
 
     void Analyzer::accept(WhileLoop  &stmt)
     {
-        /*
-        std::cout << "Analyzer::accept(WhileLoop & stmt)" << std::endl;
+        FORGE::DataType data_type = determine_expression_type(stmt.ast, stmt.ast, true, stmt.line_number);
 
-        for(auto & e : stmt.elements)
+        // Clear the temp vector for expression building
+        forge_expression_items.clear();
+
+        // Build the expression items vector
+        validate_and_build_assignment("While Loop", stmt.ast, data_type, stmt.line_number);
+
+        // Create the if function
+        FORGE::While * while_loop = new FORGE::While(new FORGE::Expression(data_type, forge_expression_items));
+
+        // Push it as the currrent aggregator
+        aggregators.push(while_loop);
+
+        // Set the aggregator
+        current_forge_aggregator = aggregators.top();
+
+        current_forge_continuable = while_loop;
+
+        // Add elements
+        for(auto & el : stmt.elements)
         {
-            e->visit(*this);
-            delete e;
+            el->visit(*this);
+            delete el;
         }
-        */
-       report_incomplete("WhileLoop");
+
+        // Remove if function
+        aggregators.pop();
+
+        // Reset aggregator
+        current_forge_aggregator = aggregators.top();
+
+        // Add the built statement to whatever the if statement was in
+        current_forge_aggregator->add_instruction(while_loop);
+
+        current_forge_continuable = nullptr;
     }
     
     // -----------------------------------------------------
@@ -431,17 +460,47 @@ namespace DEL
 
     void Analyzer::accept(ForLoop    &stmt)
     {
-        /*
-        std::cout << "Analyzer::accept(ForLoop & stmt)" << std::endl;
+        FORGE::DataType data_type = determine_expression_type(stmt.condition, stmt.condition, true, stmt.line_number);
 
-        for(auto & e : stmt.elements)
+        // Initialize the loop variable before the loop
+        stmt.loop_var->visit(*this);
+
+        // Clear the temp vector for expression building
+        forge_expression_items.clear();
+
+        // Build the expression items vector
+        validate_and_build_assignment("For Loop", stmt.condition, data_type, stmt.line_number);
+
+        FORGE::For * for_loop = new FORGE::For(new FORGE::Expression(data_type, forge_expression_items));
+
+        // Push it as the currrent aggregator
+        aggregators.push(for_loop);
+
+        // Set the aggregator
+        current_forge_aggregator = aggregators.top();
+
+        current_forge_continuable = for_loop;
+
+        // Add elements
+        for(auto & el : stmt.elements)
         {
-            e->visit(*this);
-            delete e;
+            el->visit(*this);
+            delete el;
         }
-        */
 
-       report_incomplete("ForLoop");
+        // Add the "step" x++ etc to the loop
+        stmt.step->visit(*this);
+
+        // Remove if function
+        aggregators.pop();
+
+        // Reset aggregator
+        current_forge_aggregator = aggregators.top();
+
+        // Add the built statement to whatever the if statement was in
+        current_forge_aggregator->add_instruction(for_loop);
+
+        current_forge_continuable = nullptr;
     }
     
     // -----------------------------------------------------
@@ -451,15 +510,69 @@ namespace DEL
     void Analyzer::accept(NamedLoop  &stmt)
     {
         /*
-        std::cout << "Analyzer::accept(NamedLoop & stmt)" << std::endl;
+            Create an expression that is 
 
-        for(auto & e : stmt.elements)
-        {
-            e->visit(*this);
-            delete e;
-        }
+            -> name = 1
         */
-       report_incomplete("NamedLoop");
+        Assignment * assign = new DEL::Assignment(
+               false, /* Not immutable */
+               new DEL::Ast(DEL::Ast::NodeType::ROOT, FORGE::DataType::UNDEFINED, "=", 
+                  new DEL::Ast(DEL::Ast::NodeType::IDENTIFIER, FORGE::DataType::UNKNOWN, stmt.name , nullptr, nullptr), /* Var name */
+                  new DEL::Ast(DEL::Ast::NodeType::VALUE, FORGE::DataType::STANDARD_INTEGER, "1", nullptr, nullptr)),  /* Expression AST    */
+               new EncodedDataType(FORGE::DataType::STANDARD_INTEGER,    "int"   ),      /* Encoded Data type */
+            stmt.line_number);        /* Line Number       */
+
+        // Build the assignment for the var 'name = 1' for the loop
+        assign->visit(*this);
+
+        // Build the loop
+
+        // Clear the temp vector for expression building
+        forge_expression_items.clear();
+
+        // Build the expression items vector
+        validate_and_build_assignment("Named Loop", 
+            new DEL::Ast(                                   // Here we create an AST that represents
+                DEL::Ast::NodeType::IDENTIFIER,             // The expression :    (name)
+                FORGE::DataType::UNKNOWN,                   // As we set name = 1 above so this will be the while-condition
+                stmt.name, 
+                nullptr, 
+                nullptr), 
+                    FORGE::DataType::STANDARD_INTEGER, 
+                    stmt.line_number
+        );
+
+        // Create the if function
+        FORGE::While * while_loop = new FORGE::While(new FORGE::Expression(FORGE::DataType::STANDARD_INTEGER, forge_expression_items));
+
+        // Name loops are set to be breakable, so we make this while a breakable 
+        current_forge_breakable = while_loop;
+        current_forge_continuable = while_loop;
+
+        // Push it as the currrent aggregator
+        aggregators.push(while_loop);
+
+        // Set the aggregator
+        current_forge_aggregator = aggregators.top();
+
+        // Add elements
+        for(auto & el : stmt.elements)
+        {
+            el->visit(*this);
+            delete el;
+        }
+
+        // Remove if function
+        aggregators.pop();
+
+        // Reset aggregator
+        current_forge_aggregator = aggregators.top();
+
+        // Add the built statement to whatever the if statement was in
+        current_forge_aggregator->add_instruction(while_loop);
+        
+        current_forge_continuable = nullptr;
+        current_forge_breakable = nullptr;
     }
     
     // -----------------------------------------------------
@@ -468,10 +581,30 @@ namespace DEL
 
     void Analyzer::accept(Continue   &stmt)
     {
-        /*
-        std::cout << "Analyzer::accept(Continue & stmt)" << std::endl;
-        */
-       report_incomplete("Continue");
+        // This will be fine as the only way a continue statement can come in is if it is within
+        // the scope of a loop, and loops implement this interface
+
+        if(current_forge_continuable)
+        {        
+            current_forge_continuable->add_continue_statement();
+        }
+        else
+        {
+            driver.code_forge.get_reporter().issue_report(
+                new FORGE::InternalReport(
+                    {
+                        "DEL::Analyzer",
+                        "Analyzer.cpp",
+                        "accept(Continue &stmt)",
+                        {
+                            "A continue statement came in and the continuable pointer was not set",
+                            "This could either be a grammar error, or an implementation error in the analyzer",
+                            "Either way this is a developer error, not a user error"
+                        }
+                    }
+                )
+            );
+        }
     }
     
     // -----------------------------------------------------
@@ -480,11 +613,30 @@ namespace DEL
 
     void Analyzer::accept(Break      &stmt)
     {
-        /*
-        std::cout << "Analyzer::accept(Break & stmt)" << std::endl;
-        std::cout << "\t Name : " << stmt.name << std::endl; 
-        */
-       report_incomplete("Break");
+        // This will be fine as the only way a break statement can come in is if it is within
+        // the scope of a named loop
+
+        if(current_forge_breakable)
+        {        
+            current_forge_breakable->add_break(stmt.name);
+        }
+        else
+        {
+            driver.code_forge.get_reporter().issue_report(
+                new FORGE::InternalReport(
+                    {
+                        "DEL::Analyzer",
+                        "Analyzer.cpp",
+                        "accept(Break &stmt)",
+                        {
+                            "A break statement came in and the breakable pointer was not set",
+                            "This could either be a grammar error, or an implementation error in the analyzer",
+                            "Either way this is a developer error, not a user error"
+                        }
+                    }
+                )
+            );
+        }
     }
 
     //
