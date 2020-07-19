@@ -7,6 +7,10 @@
 
 ## Development Updates: 
 
+***09/ July/ 2020***
+
+After much consideration and branches of rewrites I've decided that this implementation of DEL will remain as-is. Its not great, but its a decent start. There is no printing, no working with the VM Net/File IO, and it has no dynamic memory. This means its not _really_ usable. Realistically, writing programs in ASM for Nabla is a better idea. The DEL language was meant as a POC and I think it does that nicely.  
+
 :star2: ***22/ June/ 2020*** :star2:
 
 The Del Compiler is on its way, and recently pulled out of the Nabal VM application. Initially I thought it would a good idea to couple the compiler with the virtual machine, but I recently decided against doing that. This is an application specifically to compile the Del language to Nabla Bytecode that can then be executed by the [NablaVM](https://github.com/NablaVM/nabla).
